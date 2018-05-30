@@ -1,4 +1,4 @@
-const API_BASE = '';
+const API_BASE = 'http://api.are.na/v2';
 
 function toParams(obj) {
     return Object
