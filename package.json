@@ -6,6 +6,7 @@
     "start": "webpack-dev-server --colors --progress --port 8081"
   },
   "dependencies": {
+    "prop-types": "^15.6.1",
     "react": "^16.2.0",
     "react-dom": "^16.2.0",
     "react-markdown": "^3.3.2",
