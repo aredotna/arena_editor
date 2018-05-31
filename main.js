@@ -7,11 +7,9 @@ import React, {Component} from 'react';
 import getCaretCoordinates from 'textarea-caret';
 
 const OFFLINE = false;
-const MENTION_QUERY_DELAY = 500;
+const MENTION_QUERY_DELAY = 300;
 
 // TODO
-// - mention menu "searching..." msg
-// - mention menu "no results found" msg
 // - if in an existing mention, try to find the block/channel/user it belongs to,
 //   and put that at the top of mention menu results
 
@@ -19,6 +17,9 @@ class MentionMenu extends Component {
   static propTypes = {
     id: PropTypes.string,
     style: PropTypes.object,
+
+    // optional status message
+    status: PropTypes.string,
 
     // menu item objects to include
     items: PropTypes.array.isRequired,
@@ -115,38 +116,39 @@ class MentionMenu extends Component {
   render() {
     // only display menu if
     // it is specified to be open
-    // and if there are items to display
-    let display = this.props.isOpen && this.props.items.length > 0 ? 'block' : 'none';
+    let display = this.props.isOpen && (this.props.items.length > 0 || this.props.status) ? 'block' : 'none';
 
     return (
-      <ul
-        tabIndex='-1'
+      <div
         id={this.props.id}
         role='menu'
         aria-live={true}
         style={{display: display, ...this.props.style}}
         onKeyDown={this.onKeyDown.bind(this)}>
-        {this.props.items.map((item, i) => {
-          return (
-            <li key={item.id}
-              tabIndex='-1'
-              role='menuitem'
-              aria-posinset={i}
-              aria-setsize={this.props.items.length}
-              onClick={() => this.props.onSelect(item)}
-              ref={(node) => this.items[i] = node}>
-              <figure>
-                {item.image &&
-                  <img src={item.image.thumb.url} alt={item.title} title={item.title} />}
-              </figure>
-              <div className='mention-menu--info'>
-                <div className='mention-menu--title'>{item.title}</div>
-                <div className='mention-menu--class'>{item.class}</div>
-              </div>
-            </li>
-          );
-        })}
-      </ul>
+        {this.props.status && <div className='mention-menu--status' role='status'>{this.props.status}</div>}
+        <ul>
+          {this.props.items.map((item, i) => {
+            return (
+              <li key={item.id}
+                tabIndex='-1'
+                role='menuitem'
+                aria-posinset={i}
+                aria-setsize={this.props.items.length}
+                onClick={() => this.props.onSelect(item)}
+                ref={(node) => this.items[i] = node}>
+                <figure>
+                  {item.image &&
+                    <img src={item.image.thumb.url} alt={item.title} title={item.title} />}
+                </figure>
+                <div className='mention-menu--info'>
+                  <div className='mention-menu--title'>{item.title}</div>
+                  <div className='mention-menu--class'>{item.class}</div>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
     )
   }
 }
@@ -184,6 +186,9 @@ class Editor extends Component {
 
       // if mention menu is open or not
       mentionMenuOpen: false,
+
+      // mention menu status to display, e.g. 'Searching'
+      mentionMenuStatus: null,
 
       // candidate mention objects for the mention menu
       mentionQuery: '',
@@ -234,16 +239,17 @@ class Editor extends Component {
           }
         }
       }];
-      this.setState({mentionResults: results});
+      this.setState({ mentionResults: results });
     } else {
+      this.setState({ mentionMenuStatus: 'Searching...' });
       API.get('/search', {q: q}, (data) => {
         // TODO how to sort?
         let results = data.blocks.concat(data.channels).concat(data.users);
 
         // limit 10 results
         results = results.slice(0, 10);
-        console.log(results);
-        this.setState({ mentionResults: results });
+        let status = results.length === 0 ? 'No results found.' : null;
+        this.setState({ mentionResults: results, mentionMenuStatus: status });
       });
     }
   }
@@ -412,6 +418,7 @@ class Editor extends Component {
         <MentionMenu
           id='mention-menu'
           ref={this.mentionMenu}
+          status={this.state.mentionMenuStatus}
           style={this.state.caretPosition}
           items={this.state.mentionResults}
           isOpen={this.state.mentionMenuOpen}
