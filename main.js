@@ -273,11 +273,18 @@ class Editor extends Component {
       this.queryMention(query);
     }
 
+    // for some reason this needs to be doubled?
+    // also, for paddingLeft, how to handle R-to-L languages?
+    let lineHeight = parseFloat(getComputedStyle(textarea).lineHeight) * 2;
+    let paddingLeft = parseFloat(getComputedStyle(textarea).paddingLeft);
+    let yOffset = 10;
+    let xOffset = 10;
+
     this.setState({
       caret: caret,
       caretPosition: {
-        top: caretPos.top + 45, // TODO compute this height shift
-        left: caretWordStart.left + 25 // TODO compute this width shift
+        top: caretPos.top + lineHeight + yOffset,
+        left: caretWordStart.left + paddingLeft + xOffset
       },
       focusedWord: focusedWord,
       focusedWordStart: focusedWordStartPos,
