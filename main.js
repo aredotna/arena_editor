@@ -6,6 +6,10 @@ import ReactMarkdown from 'react-markdown';
 import React, {Component} from 'react';
 import getCaretCoordinates from 'textarea-caret';
 
+// TODO
+// - mention menu "searching..." msg
+// - mention menu "no results found" msg
+// - mention menu search only after no-typing delay
 
 class MentionMenu extends Component {
   static propTypes = {
@@ -148,21 +152,45 @@ class Editor extends Component {
     super(props);
     this.state = {
       value: '# This is a header\n\nAnd this is a paragraph',
-      focusLineStart: 0,
-      focusLineEnd: 0,
-      focusLine: [],
-      beforeLines: [],
-      afterLines: [],
-      mentionResults: [],
+
+      // number of lines and lines
+      // up to selection start
+      focusLinesStart: 0,
+      beforeFocusedLines: [],
+
+      // number of lines and lines
+      // after selection end
+      focusLinesEnd: 0,
+      afterFocusedLines: [],
+
+      // the focused/selected lines
+      focusLines: [],
+
+      // character position for textarea caret
+      caret: 0,
+
+      // pixel position for textarea caret
       caretPosition: null,
+
+      // focused word
+      // and focused word start/end character positoins
       focusedWord: null,
-      mentionMenuOpen: false
+      focusedWordStart: 0,
+      focusedWordEnd: 0,
+
+      // if mention menu is open or not
+      mentionMenuOpen: false,
+
+      // candidate mention objects for the mention menu
+      mentionResults: []
     };
 
+    // for managing focus
     this.textarea = React.createRef();
     this.mentionMenu = React.createRef();
   }
 
+  // query API for mention candidates
   queryMention(q) {
     if (q) {
       API.get('/search', {q: q}, (data) => {
@@ -199,6 +227,7 @@ class Editor extends Component {
   }
 
   onKeyDown(ev) {
+    // tab to focus to mention menu, if it's open
     if (ev.key === 'Tab' && this.state.mentionMenuOpen) {
       this.mentionMenu.current.focus();
       ev.preventDefault();
@@ -206,68 +235,89 @@ class Editor extends Component {
   }
 
   updateState(ev){
-    this.updateFocusedLine(ev);
+    this.updateFocusedLines(ev);
+    this.updateFocusedWord(ev);
+  }
 
-    // get word caret is inside
-    let focusedWordStart = /\S+$/.exec(ev.target.value.slice(0, ev.target.selectionEnd)) || [''];
-    let focusedWordEnd = /^\S+/.exec(ev.target.value.slice(ev.target.selectionEnd)) || [''];
+  updateFocusedWord(ev) {
+    // the "focused word" is the word
+    // the caret is inside;
+    // e.g. with "hello wo|rld", where "|" is the caret,
+    // the focused word is "world"
+    let textarea = ev.target;
+    let value = textarea.value;
+    let caret = textarea.selectionEnd;
+
+    // start and end parts of the focused word
+    let focusedWordStart = /\S+$/.exec(value.slice(0, caret)) || [''];
+    let focusedWordEnd = /^\S+/.exec(value.slice(caret)) || [''];
+    focusedWordStart = focusedWordStart[0];
+    focusedWordEnd = focusedWordEnd[0];
+
+    // merge into completed focused word
     let focusedWord = `${focusedWordStart}${focusedWordEnd}`;
-    let focusedWordStartPos = ev.target.selectionEnd - focusedWordStart[0].length;
-    let focusedWordEndPos = ev.target.selectionEnd + focusedWordEnd[0].length;
 
-    // get caret position
-    // and focused word position
-    let caret = getCaretCoordinates(ev.target, ev.target.selectionEnd);
-    let caretWordStart = getCaretCoordinates(ev.target, focusedWordStartPos);
+    // figure out character positions of focused word start and end
+    let focusedWordStartPos = caret - focusedWordStart.length;
+    let focusedWordEndPos = caret + focusedWordEnd.length;
+
+    // get caret pixel position
+    // and focused word pixel position
+    let caretPos = getCaretCoordinates(textarea, caret);
+    let caretWordStart = getCaretCoordinates(textarea, focusedWordStartPos);
 
     // in mention mode if focused word starts with '@'
     let mentionMode = focusedWord[0] === '@';
-    let query = focusedWord.slice(1);
     if (mentionMode) {
+      let query = focusedWord.slice(1);
       this.queryMention(query);
     }
-    this.setState({mentionMenuOpen: mentionMode});
 
     this.setState({
+      caret: caret,
       caretPosition: {
-        top: caret.top + 45, // TODO compute this height shift
+        top: caretPos.top + 45, // TODO compute this height shift
         left: caretWordStart.left + 25 // TODO compute this width shift
       },
       focusedWord: focusedWord,
       focusedWordStart: focusedWordStartPos,
       focusedWordEnd: focusedWordEndPos,
-      caret: ev.target.selectionStart
+      mentionMenuOpen: mentionMode
     });
   }
 
-  updateFocusedLine(ev) {
+  updateFocusedLines(ev) {
+    // the "focused lines" is
+    // either the line the caret is in,
+    // or if there is a highlighted selection,
+    // the lines that encompass that selection
     let textarea = ev.target;
     let value = textarea.value;
     let lines = value.split('\n');
-    let focusLineStart = value.substr(0, textarea.selectionStart).split('\n').length;
+    let focusLinesStart = value.substr(0, textarea.selectionStart).split('\n').length;
     let selectionLength = textarea.selectionEnd - textarea.selectionStart;
 
-    let selectedLines;
+    let nSelectedLines;
     if (textarea.selectionStart === textarea.selectionEnd) {
-      selectedLines = 0;
+      nSelectedLines = 0;
     } else {
-      selectedLines = value.substr(textarea.selectionStart, selectionLength).split('\n').length - 1;
+      nSelectedLines = value.substr(textarea.selectionStart, selectionLength).split('\n').length - 1;
     }
 
-    let focusLineEnd = focusLineStart + selectedLines;
-    let beforeLines = lines.slice(0, focusLineStart-1);
-    let afterLines = lines.slice(focusLineEnd, lines.length);
-    let focusLine = lines.slice(focusLineStart-1, focusLineEnd);
+    let focusLinesEnd = focusLinesStart + nSelectedLines;
+    let beforeFocusedLines = lines.slice(0, focusLinesStart-1);
+    let afterFocusedLines = lines.slice(focusLinesEnd, lines.length);
+    let focusLines = lines.slice(focusLinesStart-1, focusLinesEnd);
 
     let selectionStart = textarea.selectionStart;
     let selectionEnd = textarea.selectionEnd;
 
     this.setState({
-      focusLineStart,
-      focusLineEnd,
-      focusLine,
-      beforeLines,
-      afterLines,
+      focusLinesStart,
+      focusLinesEnd,
+      focusLines,
+      beforeFocusedLines,
+      afterFocusedLines,
       selectionStart,
       selectionEnd
     });
@@ -275,26 +325,29 @@ class Editor extends Component {
 
   selectMention(mention) {
     let value = this.state.value;
-    let start = this.state.value.substr(0, this.state.focusedWordStart);
-    // let end = this.state.value.substr(this.state.focusedWordEnd);
-    let end = this.state.value.substr(this.state.caret);
+    let beforeMention = value.substr(0, this.state.focusedWordStart);
+    let afterMention = value.substr(this.state.caret);
 
     // check if we should insert a space after the mention
-    // only do so if there isn't already a space after.
-    let space = end[0] === ' ' ? '' : ' ';
+    // only do so if there isn't already a space after
+    let space = afterMention[0] === ' ' ? '' : ' ';
 
     // update the new textarea value
-    value = `${start}@${mention.id}${space}${end}`;
+    value = `${beforeMention}@${mention.id}${space}${afterMention}`;
 
+    // update the textarea value,
+    // close the mention menu,
+    // and re-insert caret after the inserted mention
+    // (+2 for the '@' and the space)
     this.setState({
-      mentionMenuOpen: false,
       value: value,
+      mentionMenuOpen: false,
       caret: this.state.focusedWordStart + mention.id.length + 2
     });
   }
 
   componentDidUpdate(prevProps, prevState) {
-    // when menu closes, insert caret at proper location
+    // when mention menu closes, re-focus textarea and insert caret at proper location
     if (prevState.mentionMenuOpen != this.state.mentionMenuOpen && !this.state.mentionMenuOpen) {
       this.textarea.current.focus();
       this.textarea.current.selectionStart = this.state.caret;
@@ -311,19 +364,19 @@ class Editor extends Component {
       <div id="editor">
         <MentionMenu
           id='mention-menu'
+          ref={this.mentionMenu}
           style={this.state.caretPosition}
           items={this.state.mentionResults}
           isOpen={this.state.mentionMenuOpen}
           onBlur={() => this.textarea.current.focus()}
           onCancel={() => this.textarea.current.focus()}
           onSelect={this.selectMention.bind(this)}
-          ref={this.mentionMenu}
         />
         <div id="input">
           <textarea
+            ref={this.textarea}
             name={this.props.name}
             value={this.state.value}
-            ref={this.textarea}
             onChange={this.onChange.bind(this)}
             onFocus={this.updateState.bind(this)}
             onClick={this.updateState.bind(this)}
@@ -332,9 +385,9 @@ class Editor extends Component {
           />
         </div>
         <div id="preview">
-          <ReactMarkdown source={this.state.beforeLines.join('\n')} />
-          <div style={{background: '#f2f7c8', fontFamily: 'monospace', whiteSpace: 'pre-line'}}>{this.state.focusLine.join('\n')}</div>
-          <ReactMarkdown source={this.state.afterLines.join('\n')} />
+          <ReactMarkdown source={this.state.beforeFocusedLines.join('\n')} />
+          <div style={{background: '#f2f7c8', fontFamily: 'monospace', whiteSpace: 'pre-line'}}>{this.state.focusLines.join('\n')}</div>
+          <ReactMarkdown source={this.state.afterFocusedLines.join('\n')} />
         </div>
       </div>
     );
