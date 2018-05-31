@@ -6,10 +6,14 @@ import ReactMarkdown from 'react-markdown';
 import React, {Component} from 'react';
 import getCaretCoordinates from 'textarea-caret';
 
+const OFFLINE = true;
+
 // TODO
 // - mention menu "searching..." msg
 // - mention menu "no results found" msg
 // - mention menu search only after no-typing delay
+// - if in an existing mention, try to find the block/channel/user it belongs to,
+//   and put that at the top of mention menu results
 
 class MentionMenu extends Component {
   static propTypes = {
@@ -192,38 +196,57 @@ class Editor extends Component {
 
   // query API for mention candidates
   queryMention(q) {
-    if (q) {
-      API.get('/search', {q: q}, (data) => {
-        // TODO how to sort?
-        let results = data.blocks.concat(data.channels).concat(data.users);
-
-        // limit 10 results
-        results = results.slice(0, 10);
-        console.log(results);
-        this.setState({ mentionResults: results });
-      });
+    if (OFFLINE) {
+      let results = [{
+        id: 0,
+        title: 'Test Block',
+        slug: 'test-block',
+        class: 'Link',
+        base_class: 'Block',
+        image: {
+          thumb: {
+            url: '/thumb.jpg'
+          }
+        }
+      }, {
+        id: 1,
+        title: 'Test Channel',
+        slug: 'test-channel',
+        class: 'Channel',
+        base_class: 'Channel',
+        image: {
+          thumb: {
+            url: '/thumb.jpg'
+          }
+        }
+      }, {
+        id: 2,
+        title: 'Test User',
+        slug: 'test-user',
+        class: 'User',
+        base_class: 'User',
+        image: {
+          thumb: {
+            url: '/thumb.jpg'
+          }
+        }
+      }];
+      this.setState({mentionResults: results});
     } else {
-        this.setState({ mentionResults: [] });
-    }
+      if (q) {
+        API.get('/search', {q: q}, (data) => {
+          // TODO how to sort?
+          let results = data.blocks.concat(data.channels).concat(data.users);
 
-    // OFFLINE
-    // let results = [{
-    //   id: 0,
-    //   title: 'Test Block',
-    //   slug: 'test-block',
-    //   base_class: 'Block'
-    // }, {
-    //   id: 1,
-    //   title: 'Test Channel',
-    //   slug: 'test-channel',
-    //   base_class: 'Channel'
-    // }, {
-    //   id: 2,
-    //   title: 'Test User',
-    //   slug: 'test-user',
-    //   base_class: 'User'
-    // }];
-    // this.setState({mentionResults: results});
+          // limit 10 results
+          results = results.slice(0, 10);
+          console.log(results);
+          this.setState({ mentionResults: results });
+        });
+      } else {
+          this.setState({ mentionResults: [] });
+      }
+    }
   }
 
   onKeyDown(ev) {
