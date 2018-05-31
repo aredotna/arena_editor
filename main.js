@@ -6,12 +6,12 @@ import ReactMarkdown from 'react-markdown';
 import React, {Component} from 'react';
 import getCaretCoordinates from 'textarea-caret';
 
-const OFFLINE = true;
+const OFFLINE = false;
+const MENTION_QUERY_DELAY = 500;
 
 // TODO
 // - mention menu "searching..." msg
 // - mention menu "no results found" msg
-// - mention menu search only after no-typing delay
 // - if in an existing mention, try to find the block/channel/user it belongs to,
 //   and put that at the top of mention menu results
 
@@ -186,12 +186,15 @@ class Editor extends Component {
       mentionMenuOpen: false,
 
       // candidate mention objects for the mention menu
+      mentionQuery: '',
       mentionResults: []
     };
 
     // for managing focus
     this.textarea = React.createRef();
     this.mentionMenu = React.createRef();
+
+    this.mentionQueryTimeout = null;
   }
 
   // query API for mention candidates
@@ -233,19 +236,15 @@ class Editor extends Component {
       }];
       this.setState({mentionResults: results});
     } else {
-      if (q) {
-        API.get('/search', {q: q}, (data) => {
-          // TODO how to sort?
-          let results = data.blocks.concat(data.channels).concat(data.users);
+      API.get('/search', {q: q}, (data) => {
+        // TODO how to sort?
+        let results = data.blocks.concat(data.channels).concat(data.users);
 
-          // limit 10 results
-          results = results.slice(0, 10);
-          console.log(results);
-          this.setState({ mentionResults: results });
-        });
-      } else {
-          this.setState({ mentionResults: [] });
-      }
+        // limit 10 results
+        results = results.slice(0, 10);
+        console.log(results);
+        this.setState({ mentionResults: results });
+      });
     }
   }
 
@@ -293,7 +292,25 @@ class Editor extends Component {
     let mentionMode = focusedWord[0] === '@';
     if (mentionMode) {
       let query = focusedWord.slice(1);
-      this.queryMention(query);
+
+      if (this.state.mentionQuery !== query) {
+        // reset typing timeout
+        if (this.mentionQueryTimeout) {
+          clearTimeout(this.mentionQueryTimeout);
+        }
+
+        if (!query) {
+          this.setState({ mentionResults: [] });
+        } else {
+          // only execute mention query after
+          // no typing for some time
+          this.mentionQueryTimeout = setTimeout(() => {
+            console.log('executing query');
+            this.queryMention(query);
+          }, MENTION_QUERY_DELAY);
+        }
+        this.setState({ mentionQuery: query });
+      }
     }
 
     // for some reason this needs to be doubled?
