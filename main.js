@@ -13,6 +13,7 @@ class MentionMenu extends Component {
     style: PropTypes.object,
     items: PropTypes.array.isRequired,
     isOpen: PropTypes.bool.isRequired,
+    onBlur: PropTypes.func.isRequired,
     onCancel: PropTypes.func.isRequired,
     onSelect: PropTypes.func.isRequired
   }
@@ -25,35 +26,49 @@ class MentionMenu extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      focused: 0
+      focusedIndex: 0,
+      focused: false
     };
     this.menu = React.createRef();
     this.items = [];
   }
 
   componentDidUpdate(prevProps, prevState) {
-    if (this.items.length > 0) {
-      this.items[this.state.focused].focus();
+    if (prevProps.items !== this.props.items) {
+      this.setState({ focusedIndex: 0 });
+    } else if (prevProps.isOpen !== this.props.isOpen && this.props.isOpen) {
+      this.setState({ focusedIndex: 0 });
     }
-    if (this.props.isOpen && prevProps.isOpen != this.props.isOpen) {
-      this.items[this.state.focused].focus();
+  }
+
+  focus() {
+    if (this.items.length > 0) {
+      this.items[this.state.focusedIndex].focus();
     }
   }
 
   onKeyDown(ev) {
     if (ev.key === 'ArrowDown') {
-      let next = this.state.focused + 1;
-      this.setState({ focused: next % this.items.length });
+      let next = this.state.focusedIndex + 1;
+      next = next % this.items.length;
+      this.setState({ focusedIndex: next });
+      this.items[next].focus();
 
     } else if (ev.key === 'ArrowUp') {
-      let prev = this.state.focused - 1;
+      let prev = this.state.focusedIndex - 1;
       prev = prev < 0 ? this.items.length - 1 : prev;
-      this.setState({ focused: prev });
+      this.setState({ focusedIndex: prev });
+      this.items[prev].focus();
 
     } else if (ev.key === 'Escape') {
       this.props.onCancel();
+
     } else if (ev.key === 'Enter' || ev.key === ' ') {
-      this.props.onSelect(this.props.items[this.state.focused]);
+      this.props.onSelect(this.props.items[this.state.focusedIndex]);
+
+    } else if (ev.shiftKey && ev.key === 'Tab') {
+      this.props.onBlur();
+
     } else {
       return;
     }
@@ -106,13 +121,13 @@ class Editor extends Component {
       beforeLines: [],
       afterLines: [],
       mentionResults: [],
-      mentionMode: false,
       caretPosition: null,
       focusedWord: null,
       mentionMenuOpen: false
     };
 
     this.textarea = React.createRef();
+    this.mentionMenu = React.createRef();
   }
 
   queryMention(q) {
@@ -141,7 +156,14 @@ class Editor extends Component {
     this.setState({mentionResults: results});
   }
 
-  onKeyUp(ev){
+  onKeyDown(ev) {
+    if (ev.key === 'Tab' && this.state.mentionMenuOpen) {
+      this.mentionMenu.current.focus();
+      ev.preventDefault();
+    }
+  }
+
+  updateState(ev){
     this.updateFocusedLine(ev);
 
     // get word caret is inside
@@ -161,8 +183,8 @@ class Editor extends Component {
     if (mentionMode) {
       // TODO testing
       this.queryMention('francis');
-      this.setState({mentionMenuOpen: true});
     }
+    this.setState({mentionMenuOpen: mentionMode});
 
     this.setState({
       caretPosition: {
@@ -171,7 +193,8 @@ class Editor extends Component {
       },
       focusedWord: focusedWord,
       focusedWordStart: focusedWordStartPos,
-      focusedWordEnd: focusedWordEndPos
+      focusedWordEnd: focusedWordEndPos,
+      caret: ev.target.selectionStart
     });
   }
 
@@ -213,22 +236,30 @@ class Editor extends Component {
     console.log(this.state);
     let value = this.state.value;
     let start = this.state.value.substr(0, this.state.focusedWordStart);
-    let end = this.state.value.substr(this.state.focusedWordEnd);
-    value = `${start}@${mention.slug} ${end}`;
-    this.setState({mentionMenuOpen: false, value: value});
-    this.textarea.current.focus();
-    // TODO
-    // this.textarea.current.selectionStart = this.state.focusedWordStart;
-    // this.textarea.current.selectionEnd = this.state.focusedWordStart;
-    console.log(this.textarea.current);
+    // let end = this.state.value.substr(this.state.focusedWordEnd);
+    let end = this.state.value.substr(this.state.caret);
+
+    // check if we should insert a space after the mention
+    // only do so if there isn't already a space after.
+    let space = end[0] === ' ' ? '' : ' ';
+
+    // update the new textarea value
+    value = `${start}@${mention.slug}${space}${end}`;
+
+    this.setState({
+      mentionMenuOpen: false,
+      value: value,
+      caret: this.state.focusedWordStart + mention.slug.length + 2
+    });
   }
 
-  componentDidUpdate() {
-    // TODO insert caret at proper location
-    // if (this.state.selectionStart) {
-    //   this.textarea.current.selectionStart = this.state.selectionStart;
-    //   this.textarea.current.selectionEnd = this.state.selectionEnd;
-    // }
+  componentDidUpdate(prevProps, prevState) {
+    // when menu closes, insert caret at proper location
+    if (prevState.mentionMenuOpen != this.state.mentionMenuOpen && !this.state.mentionMenuOpen) {
+      this.textarea.current.focus();
+      this.textarea.current.selectionStart = this.state.caret;
+      this.textarea.current.selectionEnd = this.state.caret;
+    }
   }
 
   onChange(ev) {
@@ -249,8 +280,10 @@ class Editor extends Component {
           style={this.state.caretPosition}
           items={this.state.mentionResults}
           isOpen={this.state.mentionMenuOpen}
-          onCancel={() => this.setState({mentionMenuOpen: false})}
+          onBlur={() => this.textarea.current.focus()}
+          onCancel={() => this.textarea.current.focus()}
           onSelect={this.selectMention.bind(this)}
+          ref={this.mentionMenu}
         />
         <div id="input">
           <textarea
@@ -258,9 +291,10 @@ class Editor extends Component {
             value={this.state.value}
             ref={this.textarea}
             onChange={this.onChange.bind(this)}
-            onFocus={this.updateFocusedLine.bind(this)}
-            onClick={this.updateFocusedLine.bind(this)}
-            onKeyUp={this.onKeyUp.bind(this)}
+            onFocus={this.updateState.bind(this)}
+            onClick={this.updateState.bind(this)}
+            onKeyUp={this.updateState.bind(this)}
+            onKeyDown={this.onKeyDown.bind(this)}
           />
         </div>
         <div id="preview">
