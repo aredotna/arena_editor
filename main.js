@@ -76,7 +76,7 @@ class MentionMenu extends Component {
   }
 
   render() {
-    let display = this.props.isOpen ? 'block' : 'none';
+    let display = this.props.isOpen && this.props.items.length > 0 ? 'block' : 'none';
     return (
       <ul
         tabIndex='-1'
@@ -96,11 +96,12 @@ class MentionMenu extends Component {
               onClick={() => this.props.onSelect(item)}
               ref={(node) => this.items[i] = node}>
               <figure>
-                <img src='/thumb.jpg' alt='Test Thumb' title='Test Thumb' />
+                {item.image &&
+                  <img src={item.image.thumb.url} alt={item.title} title={item.title} />}
               </figure>
               <div className='mention-menu--info'>
                 <div className='mention-menu--title'>{item.title}</div>
-                <div className='mention-menu--class'>{item.base_class}</div>
+                <div className='mention-menu--class'>{item.class}</div>
               </div>
             </li>
           );
@@ -131,29 +132,38 @@ class Editor extends Component {
   }
 
   queryMention(q) {
-    // API.get('/search', {q: q}, (data) => {
-    //   // TODO how to sort?
-    //   let results = data.blocks.concat(data.channels).concat(data.users);
-    //   console.log(results);
-    //   this.setState({mentionResults: results});
-    // });
-    let results = [{
-      id: 0,
-      title: 'Test Block',
-      slug: 'test-block',
-      base_class: 'Block'
-    }, {
-      id: 1,
-      title: 'Test Channel',
-      slug: 'test-channel',
-      base_class: 'Channel'
-    }, {
-      id: 2,
-      title: 'Test User',
-      slug: 'test-user',
-      base_class: 'User'
-    }];
-    this.setState({mentionResults: results});
+    if (q) {
+      API.get('/search', {q: q}, (data) => {
+        // TODO how to sort?
+        let results = data.blocks.concat(data.channels).concat(data.users);
+
+        // limit 10 results
+        results = results.slice(0, 10);
+        console.log(results);
+        this.setState({ mentionResults: results });
+      });
+    } else {
+        this.setState({ mentionResults: [] });
+    }
+
+    // OFFLINE
+    // let results = [{
+    //   id: 0,
+    //   title: 'Test Block',
+    //   slug: 'test-block',
+    //   base_class: 'Block'
+    // }, {
+    //   id: 1,
+    //   title: 'Test Channel',
+    //   slug: 'test-channel',
+    //   base_class: 'Channel'
+    // }, {
+    //   id: 2,
+    //   title: 'Test User',
+    //   slug: 'test-user',
+    //   base_class: 'User'
+    // }];
+    // this.setState({mentionResults: results});
   }
 
   onKeyDown(ev) {
@@ -180,9 +190,9 @@ class Editor extends Component {
 
     // in mention mode if focused word starts with '@'
     let mentionMode = focusedWord[0] === '@';
+    let query = focusedWord.slice(1);
     if (mentionMode) {
-      // TODO testing
-      this.queryMention('francis');
+      this.queryMention(query);
     }
     this.setState({mentionMenuOpen: mentionMode});
 
@@ -232,8 +242,6 @@ class Editor extends Component {
   }
 
   selectMention(mention) {
-    console.log(mention.slug);
-    console.log(this.state);
     let value = this.state.value;
     let start = this.state.value.substr(0, this.state.focusedWordStart);
     // let end = this.state.value.substr(this.state.focusedWordEnd);
@@ -244,12 +252,12 @@ class Editor extends Component {
     let space = end[0] === ' ' ? '' : ' ';
 
     // update the new textarea value
-    value = `${start}@${mention.slug}${space}${end}`;
+    value = `${start}@${mention.id}${space}${end}`;
 
     this.setState({
       mentionMenuOpen: false,
       value: value,
-      caret: this.state.focusedWordStart + mention.slug.length + 2
+      caret: this.state.focusedWordStart + mention.id.length + 2
     });
   }
 
@@ -267,12 +275,6 @@ class Editor extends Component {
   }
 
   render() {
-        // {this.state.mentionMode && this.state.caretPosition && (
-        //   <div id="mention-menu" style={this.state.caretPosition}>
-        //     <MentionMenu items={this.state.mentionResults} />
-        //   </div>
-        // )}
-
     return (
       <div id="editor">
         <MentionMenu
