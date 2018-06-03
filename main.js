@@ -214,6 +214,15 @@ class Editor extends Component {
       // mention menu status to display, e.g. 'Searching'
       mentionMenuStatus: null,
 
+      // for tracking which mention query response
+      // is the one we wan't to keep
+      // e.g. if query A is executed and then query B,
+      // we want to keep the results of query B only.
+      // but if query B's results somehow arrive before A,
+      // then A's results will overwrite B's. This prevents
+      // that from happening.
+      mentionQueryTime: null,
+
       // candidate mention objects for the mention menu
       mentionQuery: '',
       mentionResults: []
@@ -265,8 +274,12 @@ class Editor extends Component {
       }];
       this.setState({ mentionResults: results });
     } else {
-      this.setState({ mentionMenuStatus: 'Searching...' });
+      let queryTime = new Date();
+      this.setState({ mentionMenuStatus: 'Searching...', mentionQueryTime: queryTime });
       API.get(`/search/${mentionType}`, {q: q}, (data) => {
+        if (queryTime != this.state.mentionQueryTime) {
+          return
+        }
         let results = data[mentionType].map(this.standardizeMentionResult(mentionType));
 
         // limit 10 results
