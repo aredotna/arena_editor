@@ -6,8 +6,32 @@ import ReactMarkdown from 'react-markdown';
 import React, {Component} from 'react';
 import getCaretCoordinates from 'textarea-caret';
 
+// for dev purposes
 const OFFLINE = false;
+
+// how long to wait for the user to stop typing
+// before we execute a search
 const MENTION_QUERY_DELAY = 300;
+
+// "enum" for mention types
+const MENTION_TYPES = {
+  User: 'users',
+  Channel: 'channels',
+  Block: 'blocks'
+};
+
+// what char triggers a search for what mention type
+const MENTION_CHARS = {
+  '@': MENTION_TYPES.User,
+  '%': MENTION_TYPES.Block,
+  '#': MENTION_TYPES.Channel
+};
+
+// reverse lookup of mention chars to mention types
+const CHAR_MENTIONTYPES = Object.keys(MENTION_CHARS).reduce((o, k) => {
+   o[MENTION_CHARS[k]] = k;
+   return o;
+}, {});
 
 // TODO
 // - if in an existing mention, try to find the block/channel/user it belongs to,
@@ -138,7 +162,7 @@ class MentionMenu extends Component {
                 ref={(node) => this.items[i] = node}>
                 <figure>
                   {item.image &&
-                    <img src={item.image.thumb.url} alt={item.title} title={item.title} />}
+                    <img src={item.image} alt={item.title} title={item.title} />}
                 </figure>
                 <div className='mention-menu--info'>
                   <div className='mention-menu--title'>{item.title}</div>
@@ -203,7 +227,7 @@ class Editor extends Component {
   }
 
   // query API for mention candidates
-  queryMention(q) {
+  queryMention(q, mentionType) {
     if (OFFLINE) {
       let results = [{
         id: 0,
@@ -242,15 +266,29 @@ class Editor extends Component {
       this.setState({ mentionResults: results });
     } else {
       this.setState({ mentionMenuStatus: 'Searching...' });
-      API.get('/search', {q: q}, (data) => {
-        // TODO how to sort?
-        let results = data.blocks.concat(data.channels).concat(data.users);
+      API.get(`/search/${mentionType}`, {q: q}, (data) => {
+        let results = data[mentionType].map(this.standardizeMentionResult(mentionType));
 
         // limit 10 results
         results = results.slice(0, 10);
         let status = results.length === 0 ? 'No results found.' : null;
         this.setState({ mentionResults: results, mentionMenuStatus: status });
       });
+    }
+  }
+
+  standardizeMentionResult(mentionType) {
+    // coerce mention data (e.g. block/channel/user)
+    // into a standard format so we can treat them interchangeably
+    return (mention) => {
+      // TODO this can be more robust
+      return {
+        id: mention.slug ? mention.slug : mention.id,
+        title: mention.title ? mention.title : mention.username,
+        image: mention.image ? mention.image.thumb.url : mention.avatar_image.thumb,
+        class: mention.class,
+        type: mentionType
+      }
     }
   }
 
@@ -294,9 +332,11 @@ class Editor extends Component {
     let caretPos = getCaretCoordinates(textarea, caret);
     let caretWordStart = getCaretCoordinates(textarea, focusedWordStartPos);
 
-    // in mention mode if focused word starts with '@'
-    let mentionMode = focusedWord[0] === '@';
+    // in mention mode if focused word starts a MENTION_CHARS key
+    let firstChar = focusedWord[0];
+    let mentionMode = firstChar in MENTION_CHARS;
     if (mentionMode) {
+      let mentionType = MENTION_CHARS[firstChar];
       let query = focusedWord.slice(1);
 
       if (this.state.mentionQuery !== query) {
@@ -312,7 +352,7 @@ class Editor extends Component {
           // no typing for some time
           this.mentionQueryTimeout = setTimeout(() => {
             console.log('executing query');
-            this.queryMention(query);
+            this.queryMention(query, mentionType);
           }, MENTION_QUERY_DELAY);
         }
         this.setState({ mentionQuery: query });
@@ -386,12 +426,13 @@ class Editor extends Component {
     let space = afterMention[0] === ' ' ? '' : ' ';
 
     // update the new textarea value
-    value = `${beforeMention}@${mention.id}${space}${afterMention}`;
+    let mentionChar = CHAR_MENTIONTYPES[mention.type];
+    value = `${beforeMention}${mentionChar}${mention.id}${space}${afterMention}`;
 
     // update the textarea value,
     // close the mention menu,
     // and re-insert caret after the inserted mention
-    // (+2 for the '@' and the space)
+    // (+2 for the MENTION_CHAR and the space)
     this.setState({
       value: value,
       mentionMenuOpen: false,
