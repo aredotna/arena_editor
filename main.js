@@ -54,10 +54,15 @@ class App extends Component {
         // debouncing to prevent
         // redundant requests
         if (path !== this.state.tooltipPath) {
+          let queryTime = new Date();
           this.setState({
-            tooltipLoading: true
+            tooltipLoading: true,
+            tooltipQueryTime: queryTime
           });
           Mention.fromURL(path, (mention) => {
+            if (queryTime != this.state.tooltipQueryTime) {
+              return;
+            }
             this.setState({
               showTooltip: true,
               tooltipLoading: false,

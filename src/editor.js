@@ -78,7 +78,7 @@ class Editor extends Component {
     this.setState({ mentionMenuStatus: 'Searching...', mentionQueryTime: queryTime });
     API.get(`/search/${mentionType}`, {q: q}, (data) => {
       if (queryTime != this.state.mentionQueryTime) {
-        return
+        return;
       }
       let results = data[mentionType].map((mention) => new Mention(mention, mentionType));
       console.log(results);
