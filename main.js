@@ -6,6 +6,10 @@ import ReactMarkdown from 'react-markdown';
 import React, {Component} from 'react';
 import getCaretCoordinates from 'textarea-caret';
 
+// TODO
+// - if in an existing mention, try to find the block/channel/user it belongs to,
+//   and put that at the top of mention menu results
+
 // for dev purposes
 const OFFLINE = false;
 
@@ -32,10 +36,6 @@ const CHAR_MENTIONTYPES = Object.keys(MENTION_CHARS).reduce((o, k) => {
    o[MENTION_CHARS[k]] = k;
    return o;
 }, {});
-
-// TODO
-// - if in an existing mention, try to find the block/channel/user it belongs to,
-//   and put that at the top of mention menu results
 
 class MentionMenu extends Component {
   static propTypes = {
@@ -181,7 +181,7 @@ class Editor extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      value: '# This is a header\n\nAnd this is a paragraph',
+      value: '# This is a header\n\nAnd this is a paragraph\n\n[local](/local)\n\n[elsewhere](https://google.com)\n\n',
 
       // number of lines and lines
       // up to selection start
@@ -281,6 +281,7 @@ class Editor extends Component {
           return
         }
         let results = data[mentionType].map(this.standardizeMentionResult(mentionType));
+        console.log(results);
 
         // limit 10 results
         results = results.slice(0, 10);
@@ -294,13 +295,26 @@ class Editor extends Component {
     // coerce mention data (e.g. block/channel/user)
     // into a standard format so we can treat them interchangeably
     return (mention) => {
-      // TODO this can be more robust
+      let url, image = null;
+      if (mentionType === MENTION_TYPES.User) {
+        url = `/${mention.slug}`;
+        image = mention.avatar_image.thumb;
+      } else if (mentionType === MENTION_TYPES.Channel) {
+        url = `/${mention.user.slug}/${mention.slug}`;
+      } else {
+        url = `/block/${mention.id}`;
+        if (mention.image) {
+          image = mention.image.thumb.url;
+        }
+      }
+
       return {
         id: mention.slug ? mention.slug : mention.id,
         title: mention.title ? mention.title : mention.username,
-        image: mention.image ? mention.image.thumb.url : mention.avatar_image.thumb,
         class: mention.class,
-        type: mentionType
+        type: mentionType,
+        image: image,
+        url: url
       }
     }
   }
@@ -429,6 +443,12 @@ class Editor extends Component {
     });
   }
 
+  textForMention(mention) {
+    let mentionChar = CHAR_MENTIONTYPES[mention.type];
+    // return `${mentionChar}${mention.id}`;
+    return `[${mention.title}](${mention.url})`;
+  }
+
   selectMention(mention) {
     let value = this.state.value;
     let beforeMention = value.substr(0, this.state.focusedWordStart);
@@ -439,17 +459,17 @@ class Editor extends Component {
     let space = afterMention[0] === ' ' ? '' : ' ';
 
     // update the new textarea value
-    let mentionChar = CHAR_MENTIONTYPES[mention.type];
-    value = `${beforeMention}${mentionChar}${mention.id}${space}${afterMention}`;
+    let mentionText =this.textForMention(mention);
+    value = `${beforeMention}${mentionText}${space}${afterMention}`;
 
     // update the textarea value,
     // close the mention menu,
     // and re-insert caret after the inserted mention
-    // (+2 for the MENTION_CHAR and the space)
+    // (+1 for the space)
     this.setState({
       value: value,
       mentionMenuOpen: false,
-      caret: this.state.focusedWordStart + mention.id.length + 2
+      caret: this.state.focusedWordStart + mentionText.length + 1
     });
   }
 
@@ -492,13 +512,22 @@ class Editor extends Component {
             onKeyDown={this.onKeyDown.bind(this)}
           />
         </div>
-        <div id="preview">
+        <div id="preview" onMouseMove={this.checkHover.bind(this)}>
           <ReactMarkdown source={this.state.beforeFocusedLines.join('\n')} />
           <div style={{background: '#f2f7c8', fontFamily: 'monospace', whiteSpace: 'pre-line'}}>{this.state.focusLines.join('\n')}</div>
           <ReactMarkdown source={this.state.afterFocusedLines.join('\n')} />
         </div>
       </div>
     );
+  }
+
+  checkHover(ev) {
+    if (ev.target.tagName === 'A') {
+      let host = ev.target.host;
+      if (host === window.location.host) {
+        console.log(ev.target.pathname);
+      }
+    }
   }
 }
 
