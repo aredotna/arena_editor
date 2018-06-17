@@ -42,8 +42,11 @@ class MentionMenu extends Component {
   }
 
   componentDidUpdate(prevProps, prevState) {
-    // TODO should reposition detection can be a lot beter
     let shouldReposition = false;
+
+    if (prevProps.anchor !== this.props.anchor || prevProps.status !== this.props.status) {
+      shouldReposition = true;
+    }
 
     // if items change, re-focus to first item
     if (prevProps.items !== this.props.items) {
