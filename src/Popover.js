@@ -66,7 +66,7 @@ class Popover extends Component {
     let {isVisible, className, anchor, offset, shouldReposition, style, ...rest} = this.props;
     let display = isVisible ? 'block' : 'none';
     return (
-      <div className={`popover ${className}`} style={{top: this.state.top, left: this.state.left, display: display, ...style}} ref={this.el} {...rest}>
+      <div className={`popover ${className || ''}`} style={{top: this.state.top, left: this.state.left, display: display, ...style}} ref={this.el} {...rest}>
         {this.props.children}
       </div>
     );

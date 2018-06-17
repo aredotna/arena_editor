@@ -18,20 +18,19 @@ An [ARIA-compliant menu](https://www.w3.org/TR/wai-aria-practices/#menu) used fo
 
 ## `HasMentions`
 
-A component that will detect any child anchor elements with a `href` value pointing to an internal link. When one of these child anchors are hovered over, the component will query for that channel/block/user's info and display it as a tooltip using `MentionTooltip` (see below).
+A component that will detect any child anchor elements with a `href` value pointing to an internal link. When one of these child anchors are hovered over, the component will query for that channel/block/user's info and display it as a tooltip using a `Popover` (see below).
+
+Required properties:
+
+- `renderMention`: a function with the signature `(mention) -> Component` that takes a given mention and returns the component that will be rendered for it inside the `Popover`.
 
 Optional properties:
 
-- `tooltipXOffset`: `x` offset for the child `MentionTooltip`. Default is 0.
-- `tooltipYOffset`: `y` offset for the child `MentionTooltip`. Default is 3.
+- `tooltipOffset`: `{x: number, y: number}` offset for the child `MentionTooltip`. Default is `{x: 0, y: 3}`.
 
 Notes:
 
 - Includes the class `has-mentions`; others can be added using the `className` property
-
-### `MentionTooltip`
-
-A thin wrapper around the `Popover` component, for displaying a mentioned channel/block/user's info.
 
 ## Lower-level components
 
@@ -49,11 +48,6 @@ Required properties:
 Notes:
 
 - Includes the class `popover`; others can be added using the `className` property
-
-Used by:
-
-- `TooltipMention`
-- `MentionMenu`
 
 # ARIA menu references
 

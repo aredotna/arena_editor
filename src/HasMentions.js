@@ -1,17 +1,36 @@
 import Mention from './Mention';
-import MentionTooltip from './Tooltip';
+import Popover from './Popover';
 import PropTypes from 'prop-types';
 import React, {Component} from 'react';
 
 class HasMentions extends Component {
   static propTypes = {
-    tooltipXOffset: PropTypes.number,
-    tooltipYOffset: PropTypes.number
+    renderMention: PropTypes.func.isRequired
   }
 
   static defaultProps = {
-    tooltipXOffset: 0,
-    tooltipYOffset: 3,
+    tooltipOffset: {x: 0, y: 3},
+    renderMention: (mention) => {
+      let meta;
+      let m = mention || {};
+      if (m && m.type === Mention.Type.Channel) {
+        let users = [m.data.user.username];
+        users = users.concat(m.data.collaborators.map((c) => c.username));
+        meta = `${m.data.length} blocks; ${users.join(', ')}`;
+      }
+      return (
+        <div>
+          {m.image &&
+          <figure>
+              <img src={m.image} alt={m.title} title={m.title} />
+          </figure>}
+          <div className='tooltip--info'>
+            <div className='tooltip--title'>{m.title}</div>
+            {meta && <div className='tooltip--meta'>{meta}</div>}
+            <div className='tooltip--desc'>{m.desc_short}</div>
+          </div>
+        </div>);
+    }
   }
 
   constructor(props) {
@@ -91,14 +110,26 @@ class HasMentions extends Component {
     this.setState({ showTooltip: false });
   }
 
+  componentDidUpdate(prevProps, prevState) {
+    let shouldReposition = prevState.tooltipMention != this.state.tooltipMention;
+    if (shouldReposition != this.state.shouldReposition)
+      this.setState({ shouldReposition });
+  }
+
+  shouldReposition() {
+    return this.state.shouldReposition;
+  }
+
   render() {
     return (
       <div className={`has-mentions ${this.props.className}`} onMouseMove={this.checkHover.bind(this)} onBlur={this.onBlur.bind(this)}>
-        <MentionTooltip
-          mention={this.state.tooltipMention}
+        <Popover
           anchor={this.state.tooltipAnchor}
           isVisible={this.state.showTooltip}
-          offset={{x: this.props.tooltipXOffset, y: this.props.tooltipYOffset}} />
+          shouldReposition={this.shouldReposition.bind(this)}
+          offset={this.props.tooltipOffset}>
+          {this.props.renderMention(this.state.tooltipMention)}
+        </Popover>
         {this.props.children}
       </div>);
   }
