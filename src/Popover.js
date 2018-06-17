@@ -1,6 +1,9 @@
 import PropTypes from 'prop-types';
 import React, {Component} from 'react';
 
+// component which pops over other elements
+// and will reposition itself as best it can
+// so that it doesn't bleed out the window
 class Popover extends Component {
   static propTypes = {
     isVisible: PropTypes.bool.isRequired,
@@ -60,7 +63,7 @@ class Popover extends Component {
   render() {
     let display = this.props.isVisible ? 'block' : 'none';
     return (
-      <div className="popover" style={{top: this.state.top, left: this.state.left, display: display, ...this.props.style}} ref={this.el} >
+      <div className='popover' style={{top: this.state.top, left: this.state.left, display: display, ...this.props.style}} ref={this.el} >
         {this.props.children}
       </div>
     );
