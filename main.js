@@ -2,8 +2,8 @@ import './css/style.sass';
 import ReactDOM from 'react-dom';
 import React, {Component} from 'react';
 import ReactMarkdown from 'react-markdown';
-import ContainsMentions from './src/display';
-import Editor from './src/editor';
+import HasMentions from './src/Display';
+import Editor from './src/Editor';
 
 class App extends Component {
   constructor(props) {
@@ -23,9 +23,9 @@ class App extends Component {
     return (
       <div id='app'>
         <Editor name='editor' mentionQueryDelay={300} onChange={this.onEditorChange.bind(this)} />
-        <ContainsMentions id='preview'>
+        <HasMentions id='preview'>
           <ReactMarkdown source={this.state.text} />
-        </ContainsMentions>
+        </HasMentions>
       </div>
     );
   }

@@ -1,5 +1,5 @@
-import Popover from './popover';
-import Mention from './mention';
+import Popover from './Popover';
+import Mention from './Mention';
 import React, {Component} from 'react';
 
 class MentionTooltip extends Component {

@@ -1,6 +1,6 @@
-import API from './api';
-import Mention from './mention';
-import MentionMenu from './menu';
+import API from './API';
+import Mention from './Mention';
+import MentionMenu from './Menu';
 import React, {Component} from 'react';
 import getCaretCoordinates from 'textarea-caret';
 

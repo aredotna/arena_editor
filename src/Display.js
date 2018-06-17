@@ -1,9 +1,9 @@
-import Mention from './mention';
-import MentionTooltip from './tooltip';
+import Mention from './Mention';
+import MentionTooltip from './Tooltip';
 import PropTypes from 'prop-types';
 import React, {Component} from 'react';
 
-class ContainsMentions extends Component {
+class HasMentions extends Component {
   static propTypes = {
     tooltipXOffset: PropTypes.number,
     tooltipYOffset: PropTypes.number
@@ -98,4 +98,4 @@ class ContainsMentions extends Component {
   }
 }
 
-export default ContainsMentions;
+export default HasMentions;

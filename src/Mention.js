@@ -1,4 +1,4 @@
-import API from './api';
+import API from './API';
 
 // "enum" for mention types
 const TYPES = {
