@@ -33,6 +33,12 @@ class HasMentions extends Component {
       let host = el.host;
       if (host === window.location.host) {
         let path = el.pathname;
+        let tooltipAnchor = {
+          top: el.offsetTop,
+          left: el.offsetLeft,
+          height: el.offsetHeight,
+          width: el.offsetWidth
+        };
 
         // debouncing to prevent
         // redundant requests
@@ -52,13 +58,8 @@ class HasMentions extends Component {
             this.setState({
               showTooltip: true,
               tooltipLoading: false,
-              tooltipAnchor: {
-                top: el.offsetTop,
-                left: el.offsetLeft,
-                height: el.offsetHeight,
-                width: el.offsetWidth
-              },
-              tooltipMention: mention
+              tooltipMention: mention,
+              tooltipAnchor: tooltipAnchor
             });
           });
 
@@ -66,12 +67,7 @@ class HasMentions extends Component {
           // if done loading, show tooltip
           this.setState({
             showTooltip: true,
-            tooltipAnchor: {
-              top: el.offsetTop,
-              left: el.offsetLeft,
-              height: el.offsetHeight,
-              width: el.offsetWidth
-            }
+            tooltipAnchor: tooltipAnchor
           });
         }
 
