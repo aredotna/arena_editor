@@ -69,7 +69,6 @@ class Mention {
 
     // figure out url and image based on type
     let url, desc = '', image = null;
-    console.log(data);
     if (type === TYPES.User) {
       url = `/${data.slug}`;
       image = data.avatar_image.thumb;

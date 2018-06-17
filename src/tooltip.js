@@ -2,7 +2,7 @@ import Mention from './mention';
 import PropTypes from 'prop-types';
 import React, {Component} from 'react';
 
-class Tooltip extends Component {
+class MentionTooltip extends Component {
   render() {
     let m = this.props.mention;
     let meta;
@@ -45,6 +45,7 @@ class ContainsMentions extends Component {
 
   // check if we're hovering over an internal link
   checkHover(ev) {
+    // first, check if <a> tag with internal link
     let el = ev.target;
     if (el.tagName === 'A') {
       let host = el.host;
@@ -60,9 +61,12 @@ class ContainsMentions extends Component {
             tooltipQueryTime: queryTime
           });
           Mention.fromURL(path, (mention) => {
+            // check that this is the latest query
             if (queryTime != this.state.tooltipQueryTime) {
               return;
             }
+
+            // if so, show tooltip
             this.setState({
               showTooltip: true,
               tooltipLoading: false,
@@ -71,13 +75,16 @@ class ContainsMentions extends Component {
               tooltipMention: mention
             });
           });
+
         } else if (!this.state.tooltipLoading) {
+          // if done loading, show tooltip
           this.setState({
             showTooltip: true,
             tooltipTop: el.offsetTop + el.offsetHeight + this.props.yOffset,
             tooltipLeft: el.offsetLeft
           });
         }
+
         this.setState({
           tooltipPath: el.pathname
         });
@@ -95,7 +102,7 @@ class ContainsMentions extends Component {
   render() {
     return (
       <div className='contains-mentions' onMouseMove={this.checkHover.bind(this)} onBlur={this.onBlur.bind(this)}>
-        {this.state.showTooltip && <Tooltip top={this.state.tooltipTop} left={this.state.tooltipLeft} mention={this.state.tooltipMention} />}
+        {this.state.showTooltip && <MentionTooltip top={this.state.tooltipTop} left={this.state.tooltipLeft} mention={this.state.tooltipMention} />}
         {this.props.children}
       </div>);
   }

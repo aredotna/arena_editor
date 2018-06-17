@@ -2,9 +2,8 @@ import './css/style.sass';
 import ReactDOM from 'react-dom';
 import React, {Component} from 'react';
 import ReactMarkdown from 'react-markdown';
-import Editor from './src/editor';
-import Mention from './src/mention';
 import ContainsMentions from './src/tooltip';
+import Editor from './src/editor';
 
 class App extends Component {
   constructor(props) {
