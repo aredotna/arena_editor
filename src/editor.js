@@ -20,19 +20,6 @@ class Editor extends Component {
       // TODO temp
       value: '# This is a header\n\nAnd this is a paragraph\n\n[user](/francis-tseng)\n\n[elsewhere](https://google.com)\n\n[channel](/francis-tseng/nice-places)\n\n[block](/block/2187236)\n\n',
 
-      // number of lines and lines
-      // up to selection start
-      focusedLinesStart: 0,
-      beforeFocusedLines: [],
-
-      // number of lines and lines
-      // after selection end
-      focusedLinesEnd: 0,
-      afterFocusedLines: [],
-
-      // the focused/selected lines
-      focusedLines: [],
-
       // character position for textarea caret
       caret: 0,
 
@@ -99,7 +86,6 @@ class Editor extends Component {
   }
 
   updateState(ev){
-    this.updateFocusedLines(ev);
     this.updateFocusedWord(ev);
   }
 
@@ -173,43 +159,6 @@ class Editor extends Component {
       focusedWordStart: focusedWordStartPos,
       focusedWordEnd: focusedWordEndPos,
       mentionMenuOpen: mentionMode
-    });
-  }
-
-  updateFocusedLines(ev) {
-    // the "focused lines" is
-    // either the line the caret is in,
-    // or if there is a highlighted selection,
-    // the lines that encompass that selection
-    let textarea = ev.target;
-    let value = textarea.value;
-    let lines = value.split('\n');
-    let focusedLinesStart = value.substr(0, textarea.selectionStart).split('\n').length;
-    let selectionLength = textarea.selectionEnd - textarea.selectionStart;
-
-    let nSelectedLines;
-    if (textarea.selectionStart === textarea.selectionEnd) {
-      nSelectedLines = 0;
-    } else {
-      nSelectedLines = value.substr(textarea.selectionStart, selectionLength).split('\n').length - 1;
-    }
-
-    let focusedLinesEnd = focusedLinesStart + nSelectedLines;
-    let beforeFocusedLines = lines.slice(0, focusedLinesStart-1);
-    let afterFocusedLines = lines.slice(focusedLinesEnd, lines.length);
-    let focusedLines = lines.slice(focusedLinesStart-1, focusedLinesEnd);
-
-    let selectionStart = textarea.selectionStart;
-    let selectionEnd = textarea.selectionEnd;
-
-    this.setState({
-      focusedLinesStart,
-      focusedLinesEnd,
-      focusedLines,
-      beforeFocusedLines,
-      afterFocusedLines,
-      selectionStart,
-      selectionEnd
     });
   }
 
