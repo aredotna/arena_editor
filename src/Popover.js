@@ -15,12 +15,12 @@ class Popover extends Component {
       left: PropTypes.number.isRequired,
       height: PropTypes.number.isRequired,
       width: PropTypes.number.isRequired
-    }),
+    }).isRequired,
 
     offset: PropTypes.shape({
       x: PropTypes.number.isRequired,
       y: PropTypes.number.isRequired
-    })
+    }).isRequired
   }
 
   constructor(props) {
@@ -34,7 +34,7 @@ class Popover extends Component {
 
   componentDidUpdate(prevProps, prevState) {
     // adjust position so it doesn't bleed out of the window
-    // if (this.props.isVisible && prevProps.mention != this.props.mention) {
+    // TODO if no configuration fits the whole thing, prioritize showing the top
     if (this.props.isVisible && this.props.shouldReposition()) {
       let top = this.state.top;
       let left = this.state.left;
@@ -42,6 +42,7 @@ class Popover extends Component {
 
       // y
       if (rect.bottom > window.innerHeight) {
+        console.log('BLEEDING')
         top = this.props.anchor.top - rect.height - this.props.offset.y;
       } else {
         top = this.props.anchor.top + this.props.anchor.height + this.props.offset.y;
@@ -49,9 +50,9 @@ class Popover extends Component {
 
       // x
       if (rect.right > window.innerWidth) {
-        left = this.props.anchor.left - rect.width + this.props.anchor.width + this.props.offset.x;
+        left = this.props.anchor.left - rect.width + this.props.anchor.width - this.props.offset.x;
       } else {
-        left = this.props.anchor.left - this.props.offset.x;
+        left = this.props.anchor.left + this.props.offset.x;
       }
 
       if (top !== this.state.top || left !== this.state.left) {
@@ -61,9 +62,10 @@ class Popover extends Component {
   }
 
   render() {
-    let display = this.props.isVisible ? 'block' : 'none';
+    let {isVisible, className, anchor, offset, shouldReposition, style, ...rest} = this.props;
+    let display = isVisible ? 'block' : 'none';
     return (
-      <div className='popover' style={{top: this.state.top, left: this.state.left, display: display, ...this.props.style}} ref={this.el} >
+      <div className={`popover ${className}`} style={{top: this.state.top, left: this.state.left, display: display, ...style}} ref={this.el} {...rest}>
         {this.props.children}
       </div>
     );

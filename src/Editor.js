@@ -11,7 +11,11 @@ class Editor extends Component {
     // before we execute a search
     mentionQueryDelay: 300,
 
-    onChange: (state) => {}
+    onChange: (state) => {},
+
+    menuXOffset: 0,
+    menuYOffset: 3,
+    menuMaxResults: 5
   }
 
   constructor(props) {
@@ -24,7 +28,13 @@ class Editor extends Component {
       caret: 0,
 
       // pixel position for textarea caret
-      caretPosition: null,
+      // and width & height
+      caretAnchor: {
+        top: 0,
+        left: 0,
+        width: 0,
+        height: 0
+      },
 
       // focused word
       // and focused word start/end character positoins
@@ -68,10 +78,9 @@ class Editor extends Component {
         return;
       }
       let results = data[mentionType].map((mention) => new Mention(mention, mentionType));
-      console.log(results);
 
       // limit 10 results
-      results = results.slice(0, 10);
+      results = results.slice(0, this.props.menuMaxResults);
       let status = results.length === 0 ? 'No results found.' : null;
       this.setState({ mentionResults: results, mentionMenuStatus: status });
     });
@@ -115,6 +124,7 @@ class Editor extends Component {
     // and focused word pixel position
     let caretPos = getCaretCoordinates(textarea, caret);
     let caretWordStart = getCaretCoordinates(textarea, focusedWordStartPos);
+    let caretWordEnd = getCaretCoordinates(textarea, focusedWordEndPos);
 
     // in mention mode if focused word starts a MENTION_CHARS key
     let firstChar = focusedWord[0];
@@ -142,18 +152,16 @@ class Editor extends Component {
       }
     }
 
-    // for some reason this needs to be doubled?
-    // also, for paddingLeft, how to handle R-to-L languages?
-    let lineHeight = parseFloat(getComputedStyle(textarea).lineHeight) * 2;
+    // how to handle R-to-L languages?
     let paddingLeft = parseFloat(getComputedStyle(textarea).paddingLeft);
-    let yOffset = 10;
-    let xOffset = 10;
 
     this.setState({
       caret: caret,
-      caretPosition: {
-        top: caretPos.top + lineHeight + yOffset,
-        left: caretWordStart.left + paddingLeft + xOffset
+      caretAnchor: {
+        top: caretPos.top,
+        left: caretWordStart.left + paddingLeft,
+        height: caretWordStart.height * 2,
+        width: caretWordEnd.left - caretWordStart.left
       },
       focusedWord: focusedWord,
       focusedWordStart: focusedWordStartPos,
@@ -209,10 +217,10 @@ class Editor extends Component {
     return (
       <div id="editor">
         <MentionMenu
-          id='mention-menu'
           ref={this.mentionMenu}
           status={this.state.mentionMenuStatus}
-          style={this.state.caretPosition}
+          anchor={this.state.caretAnchor}
+          offset={{x: this.props.menuXOffset, y: this.props.menuYOffset}}
           items={this.state.mentionResults}
           isOpen={this.state.mentionMenuOpen}
           onBlur={() => this.textarea.current.focus()}

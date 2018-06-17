@@ -17,7 +17,13 @@ class HasMentions extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      showTooltip: false
+      showTooltip: false,
+      tooltipAnchor: {
+        top: 0,
+        left: 0,
+        height: 0,
+        width: 0
+      }
     };
   }
 
@@ -87,7 +93,7 @@ class HasMentions extends Component {
 
   render() {
     return (
-      <div className='contains-mentions' onMouseMove={this.checkHover.bind(this)} onBlur={this.onBlur.bind(this)}>
+      <div className='has-mentions' onMouseMove={this.checkHover.bind(this)} onBlur={this.onBlur.bind(this)}>
         <MentionTooltip
           mention={this.state.tooltipMention}
           anchor={this.state.tooltipAnchor}
