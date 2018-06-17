@@ -1,4 +1,4 @@
-import API from './api';
+import API from './API';
 
 // "enum" for mention types
 const TYPES = {
@@ -33,7 +33,6 @@ class Mention {
   static Char2Types = CHAR_TYPES;
   static Type2Chars = TYPE_CHARS;
 
-  // TODO cache this data?
   static fromURL(url, onLoad) {
     let type = Object.keys(URL_REGEXES).find((k) => {
       return URL_REGEXES[k].test(url);
@@ -69,7 +68,6 @@ class Mention {
 
     // figure out url and image based on type
     let url, desc = '', image = null;
-    console.log(data);
     if (type === TYPES.User) {
       url = `/${data.slug}`;
       image = data.avatar_image.thumb;

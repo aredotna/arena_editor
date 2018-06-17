@@ -1,9 +1,9 @@
+import Popover from './Popover';
 import PropTypes from 'prop-types';
 import React, {Component} from 'react';
 
 class MentionMenu extends Component {
   static propTypes = {
-    id: PropTypes.string,
     style: PropTypes.object,
 
     // optional status message
@@ -26,7 +26,6 @@ class MentionMenu extends Component {
   }
 
   static defaultProps = {
-    id: 'mention-menu',
     style: {}
   }
 
@@ -43,14 +42,24 @@ class MentionMenu extends Component {
   }
 
   componentDidUpdate(prevProps, prevState) {
+    let shouldReposition = false;
+
+    if (prevProps.anchor !== this.props.anchor || prevProps.status !== this.props.status) {
+      shouldReposition = true;
+    }
+
     // if items change, re-focus to first item
     if (prevProps.items !== this.props.items) {
       this.setState({ focusedIndex: 0 });
+      shouldReposition = true;
 
     // when menu opens from closed state, re-focus to first item
     } else if (prevProps.isOpen !== this.props.isOpen && this.props.isOpen) {
       this.setState({ focusedIndex: 0 });
     }
+
+    if (shouldReposition != this.state.shouldReposition)
+      this.setState({ shouldReposition });
   }
 
   focus() {
@@ -101,17 +110,23 @@ class MentionMenu extends Component {
     ev.preventDefault();
   }
 
+  shouldReposition() {
+    return this.state.shouldReposition;
+  }
+
   render() {
-    // only display menu if
-    // it is specified to be open
-    let display = this.props.isOpen && (this.props.items.length > 0 || this.props.status) ? 'block' : 'none';
+    // only display menu if it is specified to be open
+    let isVisible = this.props.isOpen && (this.props.items.length > 0 || this.props.status !== null);
 
     return (
-      <div
-        id={this.props.id}
+      <Popover
         role='menu'
         aria-live={true}
-        style={{display: display, ...this.props.style}}
+        isVisible={isVisible}
+        className='mention-menu'
+        anchor={this.props.anchor}
+        offset={this.props.offset}
+        shouldReposition={this.shouldReposition.bind(this)}
         onKeyDown={this.onKeyDown.bind(this)}>
         {this.props.status && <div className='mention-menu--status' role='status'>{this.props.status}</div>}
         <ul>
@@ -136,7 +151,7 @@ class MentionMenu extends Component {
             );
           })}
         </ul>
-      </div>
+      </Popover>
     )
   }
 }

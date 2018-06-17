@@ -1,6 +1,6 @@
-import API from './api';
-import Mention from './mention';
-import MentionMenu from './menu';
+import API from './API';
+import Mention from './Mention';
+import MentionMenu from './Menu';
 import React, {Component} from 'react';
 import getCaretCoordinates from 'textarea-caret';
 
@@ -11,33 +11,29 @@ class Editor extends Component {
     // before we execute a search
     mentionQueryDelay: 300,
 
-    onChange: (state) => {}
+    onChange: (state) => {},
+
+    menuXOffset: 0,
+    menuYOffset: 3,
+    menuMaxResults: 6
   }
 
   constructor(props) {
     super(props);
     this.state = {
-      // TODO temp
-      value: '# This is a header\n\nAnd this is a paragraph\n\n[user](/francis-tseng)\n\n[elsewhere](https://google.com)\n\n[channel](/francis-tseng/nice-places)\n\n[block](/block/2187236)\n\n',
-
-      // number of lines and lines
-      // up to selection start
-      focusedLinesStart: 0,
-      beforeFocusedLines: [],
-
-      // number of lines and lines
-      // after selection end
-      focusedLinesEnd: 0,
-      afterFocusedLines: [],
-
-      // the focused/selected lines
-      focusedLines: [],
+      value: '',
 
       // character position for textarea caret
       caret: 0,
 
       // pixel position for textarea caret
-      caretPosition: null,
+      // and width & height
+      caretAnchor: {
+        top: 0,
+        left: 0,
+        width: 0,
+        height: 0
+      },
 
       // focused word
       // and focused word start/end character positoins
@@ -81,10 +77,9 @@ class Editor extends Component {
         return;
       }
       let results = data[mentionType].map((mention) => new Mention(mention, mentionType));
-      console.log(results);
 
       // limit 10 results
-      results = results.slice(0, 10);
+      results = results.slice(0, this.props.menuMaxResults);
       let status = results.length === 0 ? 'No results found.' : null;
       this.setState({ mentionResults: results, mentionMenuStatus: status });
     });
@@ -99,7 +94,6 @@ class Editor extends Component {
   }
 
   updateState(ev){
-    this.updateFocusedLines(ev);
     this.updateFocusedWord(ev);
   }
 
@@ -129,6 +123,7 @@ class Editor extends Component {
     // and focused word pixel position
     let caretPos = getCaretCoordinates(textarea, caret);
     let caretWordStart = getCaretCoordinates(textarea, focusedWordStartPos);
+    let caretWordEnd = getCaretCoordinates(textarea, focusedWordEndPos);
 
     // in mention mode if focused word starts a MENTION_CHARS key
     let firstChar = focusedWord[0];
@@ -156,60 +151,22 @@ class Editor extends Component {
       }
     }
 
-    // for some reason this needs to be doubled?
-    // also, for paddingLeft, how to handle R-to-L languages?
-    let lineHeight = parseFloat(getComputedStyle(textarea).lineHeight) * 2;
+    // how to handle R-to-L languages?
     let paddingLeft = parseFloat(getComputedStyle(textarea).paddingLeft);
-    let yOffset = 10;
-    let xOffset = 10;
+    let paddingTop = parseFloat(getComputedStyle(textarea).paddingTop);
 
     this.setState({
       caret: caret,
-      caretPosition: {
-        top: caretPos.top + lineHeight + yOffset,
-        left: caretWordStart.left + paddingLeft + xOffset
+      caretAnchor: {
+        top: caretPos.top + paddingTop,
+        left: caretWordStart.left + paddingLeft,
+        height: caretWordStart.height,
+        width: caretWordEnd.left - caretWordStart.left
       },
       focusedWord: focusedWord,
       focusedWordStart: focusedWordStartPos,
       focusedWordEnd: focusedWordEndPos,
       mentionMenuOpen: mentionMode
-    });
-  }
-
-  updateFocusedLines(ev) {
-    // the "focused lines" is
-    // either the line the caret is in,
-    // or if there is a highlighted selection,
-    // the lines that encompass that selection
-    let textarea = ev.target;
-    let value = textarea.value;
-    let lines = value.split('\n');
-    let focusedLinesStart = value.substr(0, textarea.selectionStart).split('\n').length;
-    let selectionLength = textarea.selectionEnd - textarea.selectionStart;
-
-    let nSelectedLines;
-    if (textarea.selectionStart === textarea.selectionEnd) {
-      nSelectedLines = 0;
-    } else {
-      nSelectedLines = value.substr(textarea.selectionStart, selectionLength).split('\n').length - 1;
-    }
-
-    let focusedLinesEnd = focusedLinesStart + nSelectedLines;
-    let beforeFocusedLines = lines.slice(0, focusedLinesStart-1);
-    let afterFocusedLines = lines.slice(focusedLinesEnd, lines.length);
-    let focusedLines = lines.slice(focusedLinesStart-1, focusedLinesEnd);
-
-    let selectionStart = textarea.selectionStart;
-    let selectionEnd = textarea.selectionEnd;
-
-    this.setState({
-      focusedLinesStart,
-      focusedLinesEnd,
-      focusedLines,
-      beforeFocusedLines,
-      afterFocusedLines,
-      selectionStart,
-      selectionEnd
     });
   }
 
@@ -260,10 +217,10 @@ class Editor extends Component {
     return (
       <div id="editor">
         <MentionMenu
-          id='mention-menu'
           ref={this.mentionMenu}
           status={this.state.mentionMenuStatus}
-          style={this.state.caretPosition}
+          anchor={this.state.caretAnchor}
+          offset={{x: this.props.menuXOffset, y: this.props.menuYOffset}}
           items={this.state.mentionResults}
           isOpen={this.state.mentionMenuOpen}
           onBlur={() => this.textarea.current.focus()}
