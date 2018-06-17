@@ -2,7 +2,7 @@ import './css/style.sass';
 import ReactDOM from 'react-dom';
 import React, {Component} from 'react';
 import ReactMarkdown from 'react-markdown';
-import HasMentions from './src/Display';
+import HasMentions from './src/HasMentions';
 import Editor from './src/Editor';
 
 class App extends Component {

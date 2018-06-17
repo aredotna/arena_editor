@@ -93,7 +93,7 @@ class HasMentions extends Component {
 
   render() {
     return (
-      <div className='has-mentions' onMouseMove={this.checkHover.bind(this)} onBlur={this.onBlur.bind(this)}>
+      <div className={`has-mentions ${this.props.className}`} onMouseMove={this.checkHover.bind(this)} onBlur={this.onBlur.bind(this)}>
         <MentionTooltip
           mention={this.state.tooltipMention}
           anchor={this.state.tooltipAnchor}

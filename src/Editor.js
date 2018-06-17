@@ -21,9 +21,7 @@ class Editor extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      // TODO temp
-      value: '# This is a header\n\nAnd this is a paragraph\n\n[user](/francis-tseng)\n\n[elsewhere](https://google.com)\n\n[channel](/francis-tseng/nice-places)\n\n[block](/block/2187236)\n\n',
-      // value: '',
+      value: '',
 
       // character position for textarea caret
       caret: 0,

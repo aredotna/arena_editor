@@ -33,7 +33,6 @@ class Mention {
   static Char2Types = CHAR_TYPES;
   static Type2Chars = TYPE_CHARS;
 
-  // TODO cache this data?
   static fromURL(url, onLoad) {
     let type = Object.keys(URL_REGEXES).find((k) => {
       return URL_REGEXES[k].test(url);
