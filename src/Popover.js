@@ -34,15 +34,16 @@ class Popover extends Component {
 
   componentDidUpdate(prevProps, prevState) {
     // adjust position so it doesn't bleed out of the window
-    // TODO if no configuration fits the whole thing, prioritize showing the top
     if (this.props.isVisible && this.props.shouldReposition()) {
       let top = this.state.top;
       let left = this.state.left;
       let rect = this.el.current.getBoundingClientRect();
 
       // y
-      if (rect.bottom > window.innerHeight) {
-        console.log('BLEEDING')
+      // only move the popover above if there's enough space to show the entire thing.
+      // otherwise, we err on the side of showing the top of the popover
+      let availableTopHeight = this.props.anchor.top - this.props.offset.y;
+      if (rect.bottom > window.innerHeight && availableTopHeight >= rect.height) {
         top = this.props.anchor.top - rect.height - this.props.offset.y;
       } else {
         top = this.props.anchor.top + this.props.anchor.height + this.props.offset.y;

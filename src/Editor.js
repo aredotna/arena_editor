@@ -15,7 +15,7 @@ class Editor extends Component {
 
     menuXOffset: 0,
     menuYOffset: 3,
-    menuMaxResults: 5
+    menuMaxResults: 6
   }
 
   constructor(props) {
@@ -23,6 +23,7 @@ class Editor extends Component {
     this.state = {
       // TODO temp
       value: '# This is a header\n\nAnd this is a paragraph\n\n[user](/francis-tseng)\n\n[elsewhere](https://google.com)\n\n[channel](/francis-tseng/nice-places)\n\n[block](/block/2187236)\n\n',
+      // value: '',
 
       // character position for textarea caret
       caret: 0,
@@ -154,13 +155,14 @@ class Editor extends Component {
 
     // how to handle R-to-L languages?
     let paddingLeft = parseFloat(getComputedStyle(textarea).paddingLeft);
+    let paddingTop = parseFloat(getComputedStyle(textarea).paddingTop);
 
     this.setState({
       caret: caret,
       caretAnchor: {
-        top: caretPos.top,
+        top: caretPos.top + paddingTop,
         left: caretWordStart.left + paddingLeft,
-        height: caretWordStart.height * 2,
+        height: caretWordStart.height,
         width: caretWordEnd.left - caretWordStart.left
       },
       focusedWord: focusedWord,
