@@ -1,72 +1,34 @@
 import Mention from './mention';
+import Popover from './popover';
 import PropTypes from 'prop-types';
 import React, {Component} from 'react';
 
 class MentionTooltip extends Component {
-  static propTypes = {
-    isVisible: PropTypes.bool.isRequired,
-
-    // anchor rect
-    anchor: PropTypes.shape({
-      top: PropTypes.number.isRequired,
-      left: PropTypes.number.isRequired,
-      height: PropTypes.number.isRequired,
-      width: PropTypes.number.isRequired
-    }),
-
-    offset: PropTypes.shape({
-      x: PropTypes.number.isRequired,
-      y: PropTypes.number.isRequired
-    })
-  }
-
   constructor(props) {
     super(props);
-    this.state = {
-      top: 0,
-      left: 0
-    };
-    this.tooltip = React.createRef();
+    this.state = {};
   }
 
   componentDidUpdate(prevProps, prevState) {
-    // adjust position so it doesn't bleed out of the window
-    if (this.props.isVisible && prevProps.mention != this.props.mention) {
-      let top = this.state.top;
-      let left = this.state.left;
-      let rect = this.tooltip.current.getBoundingClientRect();
+    let shouldReposition = prevProps.mention != this.props.mention;
+    if (shouldReposition != this.state.shouldReposition)
+      this.setState({ shouldReposition });
+  }
 
-      // y
-      if (rect.bottom > window.innerHeight) {
-        top = this.props.anchor.top - rect.height - this.props.offset.y;
-      } else {
-        top = this.props.anchor.top + this.props.anchor.height + this.props.offset.y;
-      }
-
-      // x
-      if (rect.right > window.innerWidth) {
-        left = this.props.anchor.left - rect.width + this.props.anchor.width + this.props.offset.x;
-      } else {
-        left = this.props.anchor.left - this.props.offset.x;
-      }
-
-      if (top !== this.state.top || left !== this.state.left) {
-        this.setState({ top, left });
-      }
-    }
+  shouldReposition() {
+    return this.state.shouldReposition;
   }
 
   render() {
     let meta;
     let m = this.props.mention || {};
-    let display = this.props.isVisible ? 'block' : 'none';
     if (m && m.type === Mention.Type.Channel) {
       let users = [m.data.user.username];
       users = users.concat(m.data.collaborators.map((c) => c.username));
       meta = `${m.data.length} blocks; ${users.join(', ')}`;
     }
     return (
-      <div id="tooltip" style={{top: this.state.top, left: this.state.left, display: display}} ref={this.tooltip} >
+      <Popover shouldReposition={this.shouldReposition.bind(this)} {...this.props}>
         {m.image &&
           <figure>
               <img src={m.image} alt={m.title} title={m.title} />
@@ -76,7 +38,7 @@ class MentionTooltip extends Component {
           {meta && <div className='tooltip--meta'>{meta}</div>}
           <div className='tooltip--desc'>{m.desc_short}</div>
         </div>
-      </div>
+      </Popover>
     );
   }
 }
@@ -166,7 +128,11 @@ class ContainsMentions extends Component {
   render() {
     return (
       <div className='contains-mentions' onMouseMove={this.checkHover.bind(this)} onBlur={this.onBlur.bind(this)}>
-        <MentionTooltip anchor={this.state.tooltipAnchor} mention={this.state.tooltipMention} isVisible={this.state.showTooltip} offset={{x: this.props.tooltipXOffset, y: this.props.tooltipYOffset}} />
+        <MentionTooltip
+          mention={this.state.tooltipMention}
+          anchor={this.state.tooltipAnchor}
+          isVisible={this.state.showTooltip}
+          offset={{x: this.props.tooltipXOffset, y: this.props.tooltipYOffset}} />
         {this.props.children}
       </div>);
   }
