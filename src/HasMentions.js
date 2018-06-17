@@ -9,28 +9,7 @@ class HasMentions extends Component {
   }
 
   static defaultProps = {
-    tooltipOffset: {x: 0, y: 3},
-    renderMention: (mention) => {
-      let meta;
-      let m = mention || {};
-      if (m && m.type === Mention.Type.Channel) {
-        let users = [m.data.user.username];
-        users = users.concat(m.data.collaborators.map((c) => c.username));
-        meta = `${m.data.length} blocks; ${users.join(', ')}`;
-      }
-      return (
-        <div>
-          {m.image &&
-          <figure>
-              <img src={m.image} alt={m.title} title={m.title} />
-          </figure>}
-          <div className='tooltip--info'>
-            <div className='tooltip--title'>{m.title}</div>
-            {meta && <div className='tooltip--meta'>{meta}</div>}
-            <div className='tooltip--desc'>{m.desc_short}</div>
-          </div>
-        </div>);
-    }
+    tooltipOffset: {x: 0, y: 3}
   }
 
   constructor(props) {
