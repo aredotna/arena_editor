@@ -45,7 +45,15 @@ class App extends Component {
   render() {
     return (
       <div id='app'>
-        <Editor name='editor' mentionQueryDelay={300} onChange={this.onEditorChange.bind(this)} />
+        <Editor
+          name='editor'
+          mentionQueryDelay={300}
+          triggers={{
+            '@': Mention.Type.User,
+            '%': Mention.Type.Block,
+            '#': Mention.Type.Channel
+          }}
+          onChange={this.onEditorChange.bind(this)} />
         <HasMentions renderMention={this.renderMentionTooltip.bind(this)}>
           <ReactMarkdown source={this.state.text} />
         </HasMentions>

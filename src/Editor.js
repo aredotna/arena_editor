@@ -1,6 +1,7 @@
 import API from './API';
 import Mention from './Mention';
 import MentionMenu from './Menu';
+import PropTypes from 'prop-types';
 import React, {Component} from 'react';
 import getCaretCoordinates from 'textarea-caret';
 
@@ -11,11 +12,14 @@ class Editor extends Component {
     // before we execute a search
     mentionQueryDelay: 300,
 
+    // executed when Editor state changes
     onChange: (state) => {},
 
-    menuXOffset: 0,
-    menuYOffset: 3,
-    menuMaxResults: 6
+    menuOffset: {x: 0, y: 3},
+    menuMaxResults: 6,
+
+    // character triggers for the MentionMenu
+    triggers: PropTypes.shape.isRequired
   }
 
   constructor(props) {
@@ -125,11 +129,11 @@ class Editor extends Component {
     let caretWordStart = getCaretCoordinates(textarea, focusedWordStartPos);
     let caretWordEnd = getCaretCoordinates(textarea, focusedWordEndPos);
 
-    // in mention mode if focused word starts a MENTION_CHARS key
+    // in mention mode if focused word's first character is a trigger
     let firstChar = focusedWord[0];
-    let mentionMode = firstChar in Mention.Char2Types;
+    let mentionMode = firstChar in this.props.triggers;
     if (mentionMode) {
-      let mentionType = Mention.Char2Types[firstChar];
+      let mentionType = this.props.triggers[firstChar];
       let query = focusedWord.slice(1);
 
       if (this.state.mentionQuery !== query) {
@@ -220,7 +224,7 @@ class Editor extends Component {
           ref={this.mentionMenu}
           status={this.state.mentionMenuStatus}
           anchor={this.state.caretAnchor}
-          offset={{x: this.props.menuXOffset, y: this.props.menuYOffset}}
+          offset={this.props.menuOffset}
           items={this.state.mentionResults}
           isOpen={this.state.mentionMenuOpen}
           onBlur={() => this.textarea.current.focus()}

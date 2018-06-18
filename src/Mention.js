@@ -7,19 +7,6 @@ const TYPES = {
   Block: 'blocks'
 };
 
-// what char triggers a search for what mention type
-const CHAR_TYPES = {
-  '@': TYPES.User,
-  '%': TYPES.Block,
-  '#': TYPES.Channel
-};
-
-// reverse lookup of mention chars to mention types
-const TYPE_CHARS = Object.keys(CHAR_TYPES).reduce((o, k) => {
-   o[CHAR_TYPES[k]] = k;
-   return o;
-}, {});
-
 // for determining mention type by url
 // and extracting its id
 const URL_REGEXES = {
@@ -30,8 +17,6 @@ const URL_REGEXES = {
 
 class Mention {
   static Type = TYPES;
-  static Char2Types = CHAR_TYPES;
-  static Type2Chars = TYPE_CHARS;
 
   static fromURL(url, onLoad) {
     let type = Object.keys(URL_REGEXES).find((k) => {
@@ -97,8 +82,6 @@ class Mention {
     this.desc = desc;
     this.desc_short = desc.length <= 150 ? desc : desc.substr(0, 150) + '...';
 
-    // let mentionChar = TYPE_CHARS[type];
-    // this.plainText = `${mentionChar}${this.id}`;
     this.plainText =`[${this.title}](${this.url})`;
   }
 }

@@ -4,12 +4,15 @@
 
 A `textarea`-based component which keeps track of the currently focused word, and passes it on to a child `MentionMenu` component (see below). This component handles the query execution and passes on the results to the `MentionMenu`, which is then used to select them.
 
+Required properties:
+
+- `triggers`: an object mapping trigger characters (e.g. `@`) to `Mention.Type`s.
+
 Optional properties:
 
 - `mentionQueryDelay`: a value describing how long to wait after typing (in seconds) before a mention query is executed. Default is 300.
 - `onChange`: a function called whenever the `Editor`'s state changes, passing in the new state.
-- `menuXOffset`: `x` offset for the child `MentionMenu`. Default is 0.
-- `menuYOffset`: `y` offset for the child `MentionMenu`. Default is 3.
+- `menuOffset`: `{x: number, y: number}` offset for the child `MentionMenu`. Default is `{x: 0, y: 3}`.
 - `menuMaxResults`: the maximum number of results returned for a mention query. Default is 6.
 
 ### `MentionMenu`
