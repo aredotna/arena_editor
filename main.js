@@ -4,7 +4,7 @@ import React, {Component} from 'react';
 import ReactMarkdown from 'react-markdown';
 import HasMentions from './src/HasMentions';
 import Mention from './src/Mention';
-import Editor from './src/Editor';
+import MentionEditor from './src/Editor';
 
 class App extends Component {
   constructor(props) {
@@ -59,7 +59,7 @@ class App extends Component {
   render() {
     return (
       <div id='app'>
-        <Editor
+        <MentionEditor
           name='editor'
           mentionQueryDelay={300}
           triggers={{
