@@ -4,7 +4,7 @@ import React, {Component} from 'react';
 import ReactMarkdown from 'react-markdown';
 import HasMentions from './src/HasMentions';
 import Mention from './src/Mention';
-import Editor from './src/Editor';
+import MentionEditor from './src/Editor';
 
 class App extends Component {
   constructor(props) {
@@ -42,10 +42,33 @@ class App extends Component {
       </div>);
   }
 
+  renderMenuItem(item) {
+    return (
+      <div style={{display: 'flex'}}>
+        <figure>
+          {item.image &&
+              <img src={item.image} alt={item.title} title={item.title} />}
+        </figure>
+        <div className='mention-menu--info'>
+          <div className='mention-menu--title'>{item.title}</div>
+          <div className='mention-menu--class'>{item.class}</div>
+        </div>
+      </div>);
+  }
+
   render() {
     return (
       <div id='app'>
-        <Editor name='editor' mentionQueryDelay={300} onChange={this.onEditorChange.bind(this)} />
+        <MentionEditor
+          name='editor'
+          mentionQueryDelay={300}
+          triggers={{
+            '@': Mention.Type.User,
+            '%': Mention.Type.Block,
+            '#': Mention.Type.Channel
+          }}
+          renderItem={this.renderMenuItem.bind(this)}
+          onChange={this.onEditorChange.bind(this)} />
         <HasMentions renderMention={this.renderMentionTooltip.bind(this)}>
           <ReactMarkdown source={this.state.text} />
         </HasMentions>

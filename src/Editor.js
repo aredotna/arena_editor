@@ -1,20 +1,27 @@
-import API from './API';
-import Mention from './Mention';
 import MentionMenu from './Menu';
+import PropTypes from 'prop-types';
 import React, {Component} from 'react';
 import getCaretCoordinates from 'textarea-caret';
 
 
-class Editor extends Component {
+class MentionEditor extends Component {
+  static propTypes = {
+    // character triggers for the MentionMenu
+    triggers: PropTypes.object.isRequired,
+
+    // how to render a menu item
+    renderItem: PropTypes.func.isRequired
+  }
+
   static defaultProps = {
     // how long to wait for the user to stop typing
     // before we execute a search
     mentionQueryDelay: 300,
 
+    // executed when Editor state changes
     onChange: (state) => {},
 
-    menuXOffset: 0,
-    menuYOffset: 3,
+    menuOffset: {x: 0, y: 3},
     menuMaxResults: 6
   }
 
@@ -44,21 +51,9 @@ class Editor extends Component {
       // if mention menu is open or not
       mentionMenuOpen: false,
 
-      // mention menu status to display, e.g. 'Searching'
-      mentionMenuStatus: null,
-
-      // for tracking which mention query response
-      // is the one we wan't to keep
-      // e.g. if query A is executed and then query B,
-      // we want to keep the results of query B only.
-      // but if query B's results somehow arrive before A,
-      // then A's results will overwrite B's. This prevents
-      // that from happening.
-      mentionQueryTime: null,
-
-      // candidate mention objects for the mention menu
-      mentionQuery: '',
-      mentionResults: []
+      // mention menu qyery
+      mentionMenuQuery: '',
+      mentionMenuType: null,
     };
 
     // for managing focus
@@ -68,22 +63,6 @@ class Editor extends Component {
     this.mentionQueryTimeout = null;
   }
 
-  // query API for mention candidates
-  queryMention(q, mentionType) {
-    let queryTime = new Date();
-    this.setState({ mentionMenuStatus: 'Searching...', mentionQueryTime: queryTime });
-    API.get(`/search/${mentionType}`, {q: q}, (data) => {
-      if (queryTime != this.state.mentionQueryTime) {
-        return;
-      }
-      let results = data[mentionType].map((mention) => new Mention(mention, mentionType));
-
-      // limit 10 results
-      results = results.slice(0, this.props.menuMaxResults);
-      let status = results.length === 0 ? 'No results found.' : null;
-      this.setState({ mentionResults: results, mentionMenuStatus: status });
-    });
-  }
 
   onKeyDown(ev) {
     // tab to focus to mention menu, if it's open
@@ -125,30 +104,39 @@ class Editor extends Component {
     let caretWordStart = getCaretCoordinates(textarea, focusedWordStartPos);
     let caretWordEnd = getCaretCoordinates(textarea, focusedWordEndPos);
 
-    // in mention mode if focused word starts a MENTION_CHARS key
+    // in mention mode if focused word's first character is a trigger
     let firstChar = focusedWord[0];
-    let mentionMode = firstChar in Mention.Char2Types;
+    let mentionMode = firstChar in this.props.triggers;
     if (mentionMode) {
-      let mentionType = Mention.Char2Types[firstChar];
+      let mentionType = this.props.triggers[firstChar];
       let query = focusedWord.slice(1);
 
-      if (this.state.mentionQuery !== query) {
+      if (this.state.mentionMenuQuery !== query) {
         // reset typing timeout
         if (this.mentionQueryTimeout) {
           clearTimeout(this.mentionQueryTimeout);
         }
 
-        if (!query) {
-          this.setState({ mentionResults: [] });
+        if (query === '') {
+          this.setState({
+            mentionMenuQuery: query,
+            mentionMenuType: null,
+            mentionMenuOpen: false
+          });
         } else {
           // only execute mention query after
           // no typing for some time
           this.mentionQueryTimeout = setTimeout(() => {
-            this.queryMention(query, mentionType);
+            this.setState({
+              mentionMenuQuery: query,
+              mentionMenuType: mentionType,
+              mentionMenuOpen: true
+            });
           }, this.props.mentionQueryDelay);
         }
-        this.setState({ mentionQuery: query });
       }
+    } else {
+      this.setState({ mentionMenuOpen: false });
     }
 
     // how to handle R-to-L languages?
@@ -165,8 +153,7 @@ class Editor extends Component {
       },
       focusedWord: focusedWord,
       focusedWordStart: focusedWordStartPos,
-      focusedWordEnd: focusedWordEndPos,
-      mentionMenuOpen: mentionMode
+      focusedWordEnd: focusedWordEndPos
     });
   }
 
@@ -218,9 +205,11 @@ class Editor extends Component {
       <div id="editor">
         <MentionMenu
           ref={this.mentionMenu}
-          status={this.state.mentionMenuStatus}
+          query={this.state.mentionMenuQuery}
+          queryType={this.state.mentionMenuType}
+          renderItem={this.props.renderItem}
           anchor={this.state.caretAnchor}
-          offset={{x: this.props.menuXOffset, y: this.props.menuYOffset}}
+          offset={this.props.menuOffset}
           items={this.state.mentionResults}
           isOpen={this.state.mentionMenuOpen}
           onBlur={() => this.textarea.current.focus()}
@@ -244,4 +233,4 @@ class Editor extends Component {
   }
 }
 
-export default Editor;
+export default MentionEditor;
