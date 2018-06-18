@@ -6,7 +6,7 @@ A `textarea`-based component which keeps track of the currently focused word, an
 
 Required properties:
 
-- `triggers`: an object mapping trigger characters (e.g. `@`) to `Mention.Type`s.
+- `triggers`: an object mapping trigger characters (e.g. `@`) to functions with the signature `(query) -> Promise` that return the results for those mention queries.
 - `renderItem`: a function with the signature `(item) -> Component` that takes a mention query result and returns a component that will be rendered for it inside the `MentionMenu`.
 
 Optional properties:
@@ -26,6 +26,7 @@ A component that will detect any child anchor elements with a `href` value point
 
 Required properties:
 
+- `loadMention`: a function with the signature `(path) -> Promise` that takes an internal/relative URL and returns a promise for the data from that URL. This data is passed on to `renderMention` (see below).
 - `renderMention`: a function with the signature `(mention) -> Component` that takes a given mention and returns the component that will be rendered for it inside the `Popover`.
 
 Optional properties:

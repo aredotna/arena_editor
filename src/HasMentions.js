@@ -1,10 +1,10 @@
-import Mention from './Mention';
 import Popover from './Popover';
 import PropTypes from 'prop-types';
 import React, {Component} from 'react';
 
 class HasMentions extends Component {
   static propTypes = {
+    loadMention: PropTypes.func.isRequired,
     renderMention: PropTypes.func.isRequired
   }
 
@@ -43,14 +43,13 @@ class HasMentions extends Component {
         // debouncing to prevent
         // redundant requests
         if (path !== this.state.tooltipPath) {
-          let queryTime = new Date();
           this.setState({
-            tooltipLoading: true,
-            tooltipQueryTime: queryTime
+            tooltipLoading: true
           });
-          Mention.fromURL(path, (mention) => {
+
+          this.props.loadMention(path).then((mention) => {
             // check that this is the latest query
-            if (queryTime != this.state.tooltipQueryTime) {
+            if (path != this.state.tooltipPath) {
               return;
             }
 
@@ -72,7 +71,7 @@ class HasMentions extends Component {
         }
 
         this.setState({
-          tooltipPath: el.pathname
+          tooltipPath: path
         });
       }
     } else {
@@ -97,7 +96,10 @@ class HasMentions extends Component {
 
   render() {
     return (
-      <div className={`has-mentions ${this.props.className}`} onMouseMove={this.checkHover.bind(this)} onBlur={this.onBlur.bind(this)}>
+      <div
+        className={`has-mentions ${this.props.className}`}
+        onMouseMove={this.checkHover.bind(this)}
+        onBlur={this.onBlur.bind(this)}>
         <Popover
           anchor={this.state.tooltipAnchor}
           isVisible={this.state.showTooltip}

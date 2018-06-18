@@ -1,5 +1,3 @@
-import API from './API';
-import Mention from './Mention';
 import Popover from './Popover';
 import PropTypes from 'prop-types';
 import React, {Component} from 'react';
@@ -7,9 +5,6 @@ import React, {Component} from 'react';
 class MentionMenu extends Component {
   static propTypes = {
     style: PropTypes.object,
-
-    // max query results to show
-    maxResults: PropTypes.number,
 
     // query to search for
     query: PropTypes.string.isRequired,
@@ -27,12 +22,14 @@ class MentionMenu extends Component {
     onSelect: PropTypes.func.isRequired,
 
     // how to render a menu item
-    renderItem: PropTypes.func.isRequired
+    renderItem: PropTypes.func.isRequired,
+
+    // execute a mention query
+    executeQuery: PropTypes.func.isRequired
   }
 
   static defaultProps = {
-    style: {},
-    maxResults: 6
+    style: {}
   }
 
   constructor(props) {
@@ -78,17 +75,15 @@ class MentionMenu extends Component {
   }
 
   // query API for mention candidates
-  queryMention(mentionType) {
+  queryMention() {
     let q = this.props.query;
     this.setState({ status: 'Searching...' });
-    API.get(`/search/${mentionType}`, {q: q}, (data) => {
+    this.props.executeQuery(q).then((results) => {
+      // check that these results are for the current query
       if (q != this.props.query) {
         return;
       }
-      let results = data[mentionType].map((mention) => new Mention(mention, mentionType));
 
-      // limit results
-      results = results.slice(0, this.props.maxResults);
       let status = results.length === 0 ? 'No results found.' : null;
       this.setState({ items: results, status: status });
     });

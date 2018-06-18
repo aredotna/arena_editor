@@ -53,7 +53,7 @@ class MentionEditor extends Component {
 
       // mention menu qyery
       mentionMenuQuery: '',
-      mentionMenuType: null,
+      mentionMenuQueryExecutor: () => {},
     };
 
     // for managing focus
@@ -108,7 +108,7 @@ class MentionEditor extends Component {
     let firstChar = focusedWord[0];
     let mentionMode = firstChar in this.props.triggers;
     if (mentionMode) {
-      let mentionType = this.props.triggers[firstChar];
+      let queryExecutor = this.props.triggers[firstChar];
       let query = focusedWord.slice(1);
 
       if (this.state.mentionMenuQuery !== query) {
@@ -121,7 +121,8 @@ class MentionEditor extends Component {
           this.setState({
             mentionMenuQuery: query,
             mentionMenuType: null,
-            mentionMenuOpen: false
+            mentionMenuOpen: false,
+            mentionMenuQueryExecutor: queryExecutor
           });
         } else {
           // only execute mention query after
@@ -129,8 +130,8 @@ class MentionEditor extends Component {
           this.mentionQueryTimeout = setTimeout(() => {
             this.setState({
               mentionMenuQuery: query,
-              mentionMenuType: mentionType,
-              mentionMenuOpen: true
+              mentionMenuOpen: true,
+              mentionMenuQueryExecutor: queryExecutor
             });
           }, this.props.mentionQueryDelay);
         }
@@ -206,7 +207,7 @@ class MentionEditor extends Component {
         <MentionMenu
           ref={this.mentionMenu}
           query={this.state.mentionMenuQuery}
-          queryType={this.state.mentionMenuType}
+          executeQuery={this.state.mentionMenuQueryExecutor}
           renderItem={this.props.renderItem}
           anchor={this.state.caretAnchor}
           offset={this.props.menuOffset}
