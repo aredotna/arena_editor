@@ -19,7 +19,10 @@ class Editor extends Component {
     menuMaxResults: 6,
 
     // character triggers for the MentionMenu
-    triggers: PropTypes.shape.isRequired
+    triggers: PropTypes.shape.isRequired,
+
+    // how to render a menu item
+    renderItem: PropTypes.func.isRequired
   }
 
   constructor(props) {
@@ -230,6 +233,7 @@ class Editor extends Component {
           onBlur={() => this.textarea.current.focus()}
           onCancel={() => this.textarea.current.focus()}
           onSelect={this.selectMention.bind(this)}
+          renderItem={this.props.renderItem}
         />
         <div id="input">
           <textarea

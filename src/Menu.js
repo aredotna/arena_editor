@@ -22,7 +22,10 @@ class MentionMenu extends Component {
     onCancel: PropTypes.func.isRequired,
 
     // what to do when selection is made
-    onSelect: PropTypes.func.isRequired
+    onSelect: PropTypes.func.isRequired,
+
+    // how to render a menu item
+    renderItem: PropTypes.func.isRequired
   }
 
   static defaultProps = {
@@ -139,14 +142,7 @@ class MentionMenu extends Component {
                 aria-setsize={this.props.items.length}
                 onClick={() => this.props.onSelect(item)}
                 ref={(node) => this.items[i] = node}>
-                <figure>
-                  {item.image &&
-                    <img src={item.image} alt={item.title} title={item.title} />}
-                </figure>
-                <div className='mention-menu--info'>
-                  <div className='mention-menu--title'>{item.title}</div>
-                  <div className='mention-menu--class'>{item.class}</div>
-                </div>
+                {this.props.renderItem(item)}
               </li>
             );
           })}

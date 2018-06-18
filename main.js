@@ -42,6 +42,20 @@ class App extends Component {
       </div>);
   }
 
+  renderMenuItem(item) {
+    return (
+      <div style={{display: 'flex'}}>
+        <figure>
+          {item.image &&
+              <img src={item.image} alt={item.title} title={item.title} />}
+        </figure>
+        <div className='mention-menu--info'>
+          <div className='mention-menu--title'>{item.title}</div>
+          <div className='mention-menu--class'>{item.class}</div>
+        </div>
+      </div>);
+  }
+
   render() {
     return (
       <div id='app'>
@@ -53,6 +67,7 @@ class App extends Component {
             '%': Mention.Type.Block,
             '#': Mention.Type.Channel
           }}
+          renderItem={this.renderMenuItem.bind(this)}
           onChange={this.onEditorChange.bind(this)} />
         <HasMentions renderMention={this.renderMentionTooltip.bind(this)}>
           <ReactMarkdown source={this.state.text} />

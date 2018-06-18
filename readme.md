@@ -7,6 +7,7 @@ A `textarea`-based component which keeps track of the currently focused word, an
 Required properties:
 
 - `triggers`: an object mapping trigger characters (e.g. `@`) to `Mention.Type`s.
+- `renderItem`: a function with the signature `(item) -> Component` that takes a mention query result and returns a component that will be rendered for it inside the `MentionMenu`.
 
 Optional properties:
 
