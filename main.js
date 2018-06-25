@@ -51,7 +51,8 @@ class App extends Component {
         </figure>
         <div className='mention-menu--info'>
           <div className='mention-menu--title'>{item.title}</div>
-          <div className='mention-menu--class'>{item.class}</div>
+          {item.user &&
+            <div className='mention-menu--class'>{item.user}</div>}
         </div>
       </div>);
   }

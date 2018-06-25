@@ -1,5 +1,7 @@
 # Components
 
+![](demo.gif)
+
 ## `Editor`
 
 A `textarea`-based component which keeps track of the currently focused word, and passes it on to a child `MentionMenu` component (see below). This component handles the query execution and passes on the results to the `MentionMenu`, which is then used to select them.

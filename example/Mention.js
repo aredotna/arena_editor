@@ -110,6 +110,8 @@ class Mention {
     this.url = url;
     this.desc = desc;
     this.desc_short = desc.length <= 150 ? desc : desc.substr(0, 150) + '...';
+    if (data.user)
+      this.user = data.user.username;
 
     this.plainText =`[${this.title}](${this.url})`;
   }
