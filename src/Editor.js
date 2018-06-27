@@ -42,11 +42,11 @@ class MentionEditor extends Component {
         height: 0
       },
 
-      // focused word
-      // and focused word start/end character positoins
-      focusedWord: null,
-      focusedWordStart: 0,
-      focusedWordEnd: 0,
+      // focused mention
+      // and focused mention start/end character positoins
+      focusedMention: null,
+      focusedMentionStart: 0,
+      focusedMentionEnd: 0,
 
       // if mention menu is open or not
       mentionMenuOpen: false,
@@ -73,43 +73,60 @@ class MentionEditor extends Component {
   }
 
   updateState(ev){
-    this.updateFocusedWord(ev);
+    this.updateFocusedMention(ev);
   }
 
-  updateFocusedWord(ev) {
-    // the "focused word" is the word
+  updateMentionRegex() {
+    let triggerChars = Object.keys(this.props.triggers).join('|');
+    this.wordRegex = new RegExp(`(${triggerChars})\\S+$`);
+    this.quotedRegex = new RegExp(`(${triggerChars})"[^"]+"?$`);
+  }
+
+  updateFocusedMention(ev) {
+    // the "focused mention" is the mention
     // the caret is inside;
-    // e.g. with "hello wo|rld", where "|" is the caret,
-    // the focused word is "world"
+    // e.g. with "hello @wo|rld", where "|" is the caret,
+    // the focused mention is "world"
     let textarea = ev.target;
     let value = textarea.value;
     let caret = textarea.selectionEnd;
 
-    // start and end parts of the focused word
-    let focusedWordStart = /\S+$/.exec(value.slice(0, caret)) || [''];
-    let focusedWordEnd = /^\S+/.exec(value.slice(caret)) || [''];
-    focusedWordStart = focusedWordStart[0];
-    focusedWordEnd = focusedWordEnd[0];
+    // check for mention under the cursor
+    let wordMentionStart = this.wordRegex.exec(value.slice(0, caret));
+    let quotedMentionStart = this.quotedRegex.exec(value.slice(0, caret));
 
-    // merge into completed focused word
-    let focusedWord = `${focusedWordStart}${focusedWordEnd}`;
+    let trigger,
+      mention = '',
+      mentionStart = '',
+      mentionEnd = '';
 
-    // figure out character positions of focused word start and end
-    let focusedWordStartPos = caret - focusedWordStart.length;
-    let focusedWordEndPos = caret + focusedWordEnd.length;
+    if (quotedMentionStart) {
+      mentionStart = quotedMentionStart[0];
+      mentionEnd = /^[^"]+"?$/.exec(value.slice(caret)) || [''];
+    } else if (wordMentionStart) {
+      mentionStart = wordMentionStart[0];
+      mentionEnd = /^\S+/.exec(value.slice(caret)) || [''];
+    }
+    if (mentionStart) {
+      trigger = mentionStart[0];
+
+      // strip start/end double quotes
+      mention = `${mentionStart.slice(1)}${mentionEnd[0]}`.replace(/^"+|"+$/g, '');
+    }
+
+    // figure out character positions of focused mention start and end
+    let mentionStartPos = caret - mentionStart.length;
+    let mentionEndPos = caret + mentionEnd.length;
 
     // get caret pixel position
-    // and focused word pixel position
+    // and focused mention pixel position
     let caretPos = getCaretCoordinates(textarea, caret);
-    let caretWordStart = getCaretCoordinates(textarea, focusedWordStartPos);
-    let caretWordEnd = getCaretCoordinates(textarea, focusedWordEndPos);
+    let caretMentionStart = getCaretCoordinates(textarea, mentionStartPos);
+    let caretMentionEnd = getCaretCoordinates(textarea, mentionEndPos);
 
-    // in mention mode if focused word's first character is a trigger
-    let firstChar = focusedWord[0];
-    let mentionMode = firstChar in this.props.triggers;
-    if (mentionMode) {
-      let queryExecutor = this.props.triggers[firstChar];
-      let query = focusedWord.slice(1);
+    if (mention) {
+      let queryExecutor = this.props.triggers[trigger];
+      let query = mention;
 
       if (this.state.mentionMenuQuery !== query) {
         // reset typing timeout
@@ -148,19 +165,21 @@ class MentionEditor extends Component {
       caret: caret,
       caretAnchor: {
         top: caretPos.top + paddingTop,
-        left: caretWordStart.left + paddingLeft,
-        height: caretWordStart.height,
-        width: caretWordEnd.left - caretWordStart.left
+        left: caretMentionStart.left + paddingLeft,
+        height: caretMentionStart.height,
+        width: caretMentionEnd.left - caretMentionStart.left
       },
-      focusedWord: focusedWord,
-      focusedWordStart: focusedWordStartPos,
-      focusedWordEnd: focusedWordEndPos
+      focusedMention: mention,
+      focusedMentionStart: mentionStart,
+      focusedMentionEnd: mentionEnd,
+      focusedMentionStart: mentionStartPos,
+      focusedMentionEnd: mentionEndPos
     });
   }
 
   selectMention(mention) {
     let value = this.state.value;
-    let beforeMention = value.substr(0, this.state.focusedWordStart);
+    let beforeMention = value.substr(0, this.state.focusedMentionStart);
     let afterMention = value.substr(this.state.caret);
 
     // check if we should insert a space after the mention
@@ -177,15 +196,17 @@ class MentionEditor extends Component {
     this.setState({
       value: value,
       mentionMenuOpen: false,
-      caret: this.state.focusedWordStart + mention.plainText.length + 1
+      caret: this.state.focusedMentionStart + mention.plainText.length + 1
     });
   }
 
   componentDidMount() {
+    this.updateMentionRegex();
     this.updateState({target: this.textarea.current});
   }
 
   componentDidUpdate(prevProps, prevState) {
+    this.updateMentionRegex();
     // when mention menu closes, re-focus textarea and insert caret at proper location
     if (prevState.mentionMenuOpen != this.state.mentionMenuOpen && !this.state.mentionMenuOpen) {
       this.textarea.current.focus();
